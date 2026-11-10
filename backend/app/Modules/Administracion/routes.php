@@ -2,6 +2,7 @@
 
 use App\Modules\Administracion\Controllers\ComercioController;
 use App\Modules\Administracion\Controllers\UsuarioController;
+use App\Modules\Administracion\Controllers\ZonaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,4 +19,8 @@ Route::middleware('rol:administrador')->group(function (): void {
     Route::put('/usuarios/{id}/password', [UsuarioController::class, 'restablecerPassword'])->whereNumber('id');
 
     Route::get('/comercios', [ComercioController::class, 'index']);
+
+    Route::get('/zonas', [ZonaController::class, 'index']);
+    Route::post('/zonas', [ZonaController::class, 'store']);
+    Route::put('/zonas/{id}', [ZonaController::class, 'update'])->whereNumber('id');
 });
