@@ -18,6 +18,8 @@ export class PedidosLista {
 
   /** Filtro que llega por la URL: /pedidos?estado=en_ruta */
   readonly estado = input<EstadoPedido | undefined>();
+  /** Búsqueda que llega del buscador de la barra superior: /pedidos?numero=PED-0012 */
+  readonly numero = input<string | undefined>();
 
   protected readonly estados = ESTADOS_PEDIDO;
   protected readonly prioridades = PRIORIDADES;
@@ -32,17 +34,23 @@ export class PedidosLista {
     // Cada vez que cambia el filtro de la URL se vuelve a pedir la primera página.
     effect(() => {
       this.estado();
+      this.numero();
       untracked(() => this.cargar(1));
     });
   }
 
   protected cargar(pagina: number): void {
     const estado = this.estado();
+    const numero = this.numero();
     this.cargando.set(true);
     this.error.set(null);
 
     this.api
-      .get<Paginado<Pedido>>('/pedidos', estado ? { page: pagina, estado } : { page: pagina })
+      .get<Paginado<Pedido>>('/pedidos', {
+        page: pagina,
+        ...(estado ? { estado } : {}),
+        ...(numero ? { numero } : {}),
+      })
       .subscribe({
         next: (respuesta) => {
           this.pedidos.set(respuesta.data);
@@ -57,6 +65,9 @@ export class PedidosLista {
   }
 
   protected filtrar(estado: string): void {
-    void this.router.navigate(['/pedidos'], { queryParams: estado ? { estado } : {} });
+    void this.router.navigate(['/pedidos'], {
+      queryParams: { estado: estado || null },
+      queryParamsHandling: 'merge',
+    });
   }
 }

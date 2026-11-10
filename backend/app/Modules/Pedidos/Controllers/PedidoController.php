@@ -14,17 +14,20 @@ class PedidoController extends Controller
 {
     /**
      * GET /api/pedidos — lista paginada. Cada rol ve solo lo que le corresponde
-     * (ver Pedido::scopeVisiblesPara). Filtro opcional: ?estado=en_ruta
+     * (ver Pedido::scopeVisiblesPara). Filtros opcionales: ?estado=en_ruta y ?numero=PED-00
+     * (pedidos cuyo número contiene ese texto, sin distinguir mayúsculas).
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $filtros = $request->validate([
             'estado' => ['nullable', Rule::enum(EstadoPedido::class)],
+            'numero' => ['nullable', 'string', 'max:20'],
         ]);
 
         $pedidos = Pedido::query()
             ->visiblesPara($request->user())
             ->when($filtros['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
+            ->when($filtros['numero'] ?? null, fn ($query, string $numero) => $query->whereLike('numero', "%{$numero}%"))
             ->with(['comercio', 'cliente', 'repartidor', 'zona'])
             ->latest('id')
             ->paginate(20);

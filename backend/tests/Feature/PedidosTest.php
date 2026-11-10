@@ -87,6 +87,44 @@ test('la lista de pedidos se puede filtrar por estado y rechaza estados inválid
         ->assertJsonPath('error.codigo', 'VALIDACION');
 });
 
+test('la lista de pedidos se puede buscar por número sin distinguir mayúsculas', function () {
+    $buscado = Pedido::factory()->create(['numero' => 'PED-000123']);
+    Pedido::factory()->create(['numero' => 'PED-000456']);
+
+    Sanctum::actingAs(Usuario::factory()->operador()->create());
+
+    $this->getJson('/api/pedidos?numero=ped-0001')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $buscado->id);
+
+    $this->getJson('/api/pedidos?numero=PED-')->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson('/api/pedidos?numero=999')->assertOk()->assertJsonCount(0, 'data');
+});
+
+test('buscar por un número demasiado largo responde error de validación', function () {
+    Sanctum::actingAs(Usuario::factory()->operador()->create());
+
+    $respuesta = $this->getJson('/api/pedidos?numero='.str_repeat('9', 21))
+        ->assertUnprocessable()
+        ->assertJsonPath('error.codigo', 'VALIDACION');
+
+    expect($respuesta->json('error.campos.numero.0'))->toContain('número');
+});
+
+test('buscar por número no muestra pedidos ajenos', function () {
+    $miComercio = Comercio::factory()->create();
+    $propio = Pedido::factory()->create(['numero' => 'PED-000111', 'comercio_id' => $miComercio->id]);
+    Pedido::factory()->create(['numero' => 'PED-000112']);
+
+    Sanctum::actingAs(Usuario::factory()->comercio($miComercio)->create());
+
+    $this->getJson('/api/pedidos?numero=PED-00011')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $propio->id);
+});
+
 test('un comercio solo ve sus propios clientes', function () {
     $miComercio = Comercio::factory()->create();
     Cliente::factory()->count(2)->create(['comercio_id' => $miComercio->id]);

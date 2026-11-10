@@ -1,0 +1,230 @@
+// Marco de la aplicación: barra lateral + barra superior. Los colores salen del tema.
+@use '../../estilos/variables' as tema;
+
+$ancho: 240px;
+$ancho-plegado: 68px;
+$alto-superior: 60px;
+$escritorio: 992px;
+
+.marco {
+  --ancho-lateral: #{$ancho};
+  min-height: 100vh;
+}
+
+.marco__principal {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.marco__contenido {
+  flex: 1;
+  width: 100%;
+  max-width: 1400px;
+  padding: 1.25rem 1rem 2.5rem;
+  margin: 0 auto;
+}
+
+// ── Barra lateral ────────────────────────────────────────────────────────────
+.lateral {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  width: $ancho;
+  padding: 0.75rem;
+  background: tema.$petroleo-oscuro;
+  color: rgba(tema.$white, 0.72);
+  transform: translateX(-100%);
+  transition:
+    transform 0.2s ease,
+    width 0.2s ease;
+}
+
+.lateral--abierto {
+  box-shadow: tema.$box-shadow-lg;
+  transform: none;
+}
+
+.lateral__fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 1035;
+  background: rgba(tema.$gray-900, 0.45);
+}
+
+.lateral__marca {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: 44px;
+  padding: 0 0.375rem;
+  margin-bottom: 1rem;
+  color: tema.$white;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lateral__nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lateral__enlace {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 40px;
+  padding: 0 0.75rem;
+  border-radius: tema.$border-radius;
+  color: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+
+  .bi {
+    flex: none;
+    width: 20px;
+    font-size: 1.125rem;
+    line-height: 1;
+    text-align: center;
+  }
+
+  &:hover {
+    background: rgba(tema.$white, 0.07);
+    color: tema.$white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid tema.$naranja;
+    outline-offset: -2px;
+  }
+}
+
+.lateral__enlace--activo {
+  background: rgba(tema.$white, 0.12);
+  color: tema.$white;
+
+  // Marca naranja a la izquierda: dice "estás aquí" sin depender solo del fondo.
+  &::before {
+    position: absolute;
+    left: -0.75rem;
+    width: 3px;
+    height: 20px;
+    border-radius: 0 3px 3px 0;
+    background: tema.$naranja;
+    content: '';
+  }
+}
+
+.lateral__usuario {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.75rem 0.375rem 0.25rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(tema.$white, 0.12);
+}
+
+// ── Barra superior ───────────────────────────────────────────────────────────
+.superior {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: $alto-superior;
+  padding: 0 1rem;
+  border-bottom: 1px solid tema.$gray-200;
+  background: tema.$white;
+}
+
+.superior__buscador {
+  flex: 1;
+  max-width: 360px;
+}
+
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(tema.$petroleo, 0.1);
+  color: tema.$petroleo;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.avatar--claro {
+  background: rgba(tema.$white, 0.14);
+  color: tema.$white;
+}
+
+// ── Escritorio: la barra lateral queda fija y el contenido se corre ──────────
+@media (min-width: $escritorio) {
+  .lateral {
+    box-shadow: none;
+    transform: none;
+  }
+
+  .lateral__fondo {
+    display: none;
+  }
+
+  .marco__principal {
+    margin-left: var(--ancho-lateral);
+    transition: margin-left 0.2s ease;
+  }
+
+  .marco__contenido {
+    padding: 1.75rem 2rem 3rem;
+  }
+
+  .superior {
+    padding: 0 2rem 0 1.25rem;
+  }
+
+  .marco--plegado {
+    --ancho-lateral: #{$ancho-plegado};
+
+    .lateral {
+      width: $ancho-plegado;
+    }
+
+    .lateral__texto {
+      display: none;
+    }
+
+    .lateral__enlace {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .lateral__marca,
+    .lateral__usuario {
+      justify-content: center;
+      padding-right: 0;
+      padding-left: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lateral,
+  .marco__principal {
+    transition: none;
+  }
+}
