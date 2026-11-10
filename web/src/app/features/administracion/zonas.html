@@ -1,0 +1,98 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h5 mb-0">Zonas</h2>
+  <button type="button" class="btn btn-primary" (click)="abrirFormulario()">Nueva zona</button>
+</div>
+
+@if (exito(); as mensaje) {
+  <div class="alert alert-success d-flex justify-content-between align-items-center" role="status">
+    <span>{{ mensaje }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="exito.set(null)"></button>
+  </div>
+}
+
+@if (error(); as mensaje) {
+  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+} @else if (cargando()) {
+  <p class="text-body-secondary">Cargando…</p>
+} @else if (zonas().length === 0) {
+  <p class="text-body-secondary">Todavía no hay zonas. Crea la primera con "Nueva zona".</p>
+} @else {
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (zona of zonas(); track zona.id) {
+          <tr>
+            <td class="fw-semibold">{{ zona.nombre }}</td>
+            <td>{{ zona.descripcion }}</td>
+            <td class="text-end">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="abrirFormulario(zona)"
+              >
+                Editar
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginacion [meta]="meta()" (cambiar)="cargar($event)" />
+}
+
+@if (modalAbierto()) {
+  <app-modal [titulo]="editando() ? 'Editar zona' : 'Nueva zona'" (cerrar)="cerrarFormulario()">
+    <form (ngSubmit)="guardar()">
+      @if (errorFormulario(); as mensaje) {
+        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+      }
+
+      <div class="mb-3">
+        <label for="zona-nombre" class="form-label">Nombre</label>
+        <input
+          id="zona-nombre"
+          name="nombre"
+          type="text"
+          class="form-control"
+          maxlength="60"
+          required
+          [class.is-invalid]="errores()['nombre']"
+          [(ngModel)]="formulario.nombre"
+        />
+        <app-error-campo [mensajes]="errores()['nombre']" />
+      </div>
+
+      <div class="mb-4">
+        <label for="zona-descripcion" class="form-label">Descripción (opcional)</label>
+        <textarea
+          id="zona-descripcion"
+          name="descripcion"
+          class="form-control"
+          rows="3"
+          maxlength="500"
+          [class.is-invalid]="errores()['descripcion']"
+          [(ngModel)]="formulario.descripcion"
+        ></textarea>
+        <app-error-campo [mensajes]="errores()['descripcion']" />
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrarFormulario()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

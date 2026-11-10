@@ -78,7 +78,8 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    // Fijo en español: los mensajes de validación de la API salen de lang/es.
+    'locale' => 'es',
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

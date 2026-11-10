@@ -31,6 +31,30 @@ export interface Usuario {
   zona_id: number | null;
   disponibilidad: 'disponible' | 'no_disponible' | null;
   comercio?: Referencia | null;
+  zona?: Referencia | null;
+}
+
+export interface Zona {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+}
+
+export interface Comercio {
+  id: number;
+  nombre: string;
+  direccion_recogida: string;
+  activo: boolean;
+}
+
+export interface TipoIncidencia {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface Configuracion {
+  max_pedidos_activos: number;
 }
 
 export interface RespuestaLogin {

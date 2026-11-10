@@ -29,6 +29,10 @@ class UsuarioResource extends JsonResource
                 'id' => $this->comercio->id,
                 'nombre' => $this->comercio->nombre,
             ]),
+            'zona' => $this->whenLoaded('zona', fn (): ?array => $this->zona === null ? null : [
+                'id' => $this->zona->id,
+                'nombre' => $this->zona->nombre,
+            ]),
         ];
     }
 }

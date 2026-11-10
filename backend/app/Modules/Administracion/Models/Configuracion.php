@@ -28,10 +28,11 @@ class Configuracion extends Model
     }
 
     /**
-     * Devuelve la única fila de configuración.
+     * Devuelve la única fila de configuración. Si aún no existe la crea y la vuelve a
+     * leer, para que traiga los valores por defecto que pone la base de datos.
      */
     public static function actual(): self
     {
-        return self::query()->firstOrCreate(['id' => 1]);
+        return self::query()->find(1) ?? self::query()->create(['id' => 1])->fresh();
     }
 }
