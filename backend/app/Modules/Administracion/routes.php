@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Administracion\Controllers\ComercioController;
+use App\Modules\Administracion\Controllers\ConfiguracionController;
 use App\Modules\Administracion\Controllers\TipoIncidenciaController;
 use App\Modules\Administracion\Controllers\UsuarioController;
 use App\Modules\Administracion\Controllers\ZonaController;
@@ -29,4 +30,7 @@ Route::middleware('rol:administrador')->group(function (): void {
     Route::post('/tipos-incidencia', [TipoIncidenciaController::class, 'store']);
     Route::put('/tipos-incidencia/{id}', [TipoIncidenciaController::class, 'update'])->whereNumber('id');
     Route::put('/tipos-incidencia/{id}/estado', [TipoIncidenciaController::class, 'cambiarEstado'])->whereNumber('id');
+
+    Route::get('/configuracion', [ConfiguracionController::class, 'show']);
+    Route::put('/configuracion', [ConfiguracionController::class, 'update']);
 });
