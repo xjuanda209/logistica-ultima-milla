@@ -235,6 +235,76 @@ test('un administrador no puede desactivarse a sí mismo', function () {
     expect($administrador->fresh()->activo)->toBeTrue();
 });
 
+test('un administrador no puede cambiar su propio rol pero sí sus demás datos', function () {
+    $administrador = comoAdministrador();
+    Usuario::factory()->administrador()->create();
+
+    $this->putJson("/api/usuarios/{$administrador->id}", datosDeUsuario(['rol' => 'operador']))
+        ->assertConflict()
+        ->assertJsonPath('error.codigo', 'NO_PUEDES_CAMBIAR_TU_ROL')
+        ->assertJsonStructure(['error' => ['codigo', 'mensaje', 'campos']]);
+
+    expect($administrador->fresh()->rol)->toBe(Rol::Administrador);
+
+    $this->putJson("/api/usuarios/{$administrador->id}", datosDeUsuario(['rol' => 'administrador', 'nombre' => 'Ana Editada']))
+        ->assertOk()
+        ->assertJsonPath('data.nombre', 'Ana Editada')
+        ->assertJsonPath('data.rol', 'administrador');
+});
+
+test('un administrador puede desactivar o cambiar el rol de otro administrador si queda alguno activo', function () {
+    comoAdministrador();
+    $otro = Usuario::factory()->administrador()->create();
+    $tercero = Usuario::factory()->administrador()->create();
+
+    $this->putJson("/api/usuarios/{$otro->id}/estado", ['activo' => false])->assertOk();
+
+    $this->putJson("/api/usuarios/{$tercero->id}", datosDeUsuario(['rol' => 'operador']))
+        ->assertOk()
+        ->assertJsonPath('data.rol', 'operador');
+});
+
+/*
+| Por la API el último administrador activo siempre es quien hace la petición (y ya no puede
+| desactivarse ni cambiar su rol). Estas pruebas cubren la regla por sí sola simulando el caso
+| límite: quien pide ya fue desactivado en otra sesión y solo queda un administrador activo.
+*/
+test('no se puede desactivar al último administrador activo', function () {
+    Sanctum::actingAs(Usuario::factory()->administrador()->inactivo()->create());
+    $ultimo = Usuario::factory()->administrador()->create();
+
+    $this->putJson("/api/usuarios/{$ultimo->id}/estado", ['activo' => false])
+        ->assertConflict()
+        ->assertJsonPath('error.codigo', 'ULTIMO_ADMINISTRADOR')
+        ->assertJsonStructure(['error' => ['codigo', 'mensaje', 'campos']]);
+
+    expect($ultimo->fresh()->activo)->toBeTrue()
+        ->and($ultimo->tokens()->count())->toBe(0);
+});
+
+test('no se puede cambiar el rol del último administrador activo', function () {
+    Sanctum::actingAs(Usuario::factory()->administrador()->inactivo()->create());
+    $ultimo = Usuario::factory()->administrador()->create();
+
+    $this->putJson("/api/usuarios/{$ultimo->id}", datosDeUsuario(['rol' => 'operador']))
+        ->assertConflict()
+        ->assertJsonPath('error.codigo', 'ULTIMO_ADMINISTRADOR');
+
+    expect($ultimo->fresh()->rol)->toBe(Rol::Administrador);
+
+    $this->putJson("/api/usuarios/{$ultimo->id}", datosDeUsuario(['rol' => 'administrador', 'nombre' => 'Ana Editada']))
+        ->assertOk();
+});
+
+test('un administrador inactivo no cuenta como el último: se le puede cambiar el rol', function () {
+    comoAdministrador();
+    $inactivo = Usuario::factory()->administrador()->inactivo()->create();
+
+    $this->putJson("/api/usuarios/{$inactivo->id}", datosDeUsuario(['rol' => 'operador']))
+        ->assertOk()
+        ->assertJsonPath('data.rol', 'operador');
+});
+
 test('cambiar el estado exige el campo activo', function () {
     comoAdministrador();
     $usuario = Usuario::factory()->create();

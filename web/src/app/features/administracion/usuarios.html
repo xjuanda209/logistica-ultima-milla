@@ -145,6 +145,7 @@
           name="rol"
           class="form-select"
           [class.is-invalid]="errores()['rol']"
+          [disabled]="editando()?.id === miId"
           [(ngModel)]="formulario.rol"
         >
           @for (rol of roles; track rol) {
@@ -152,6 +153,9 @@
           }
         </select>
         <app-error-campo [mensajes]="errores()['rol']" />
+        @if (editando()?.id === miId) {
+          <div class="form-text">No puedes cambiar tu propio rol.</div>
+        }
       </div>
 
       @if (formulario.rol === 'comercio') {

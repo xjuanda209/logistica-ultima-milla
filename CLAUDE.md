@@ -81,7 +81,8 @@ y un `routes.php`.
   { "error": { "codigo": "VALIDACION", "mensaje": "Los datos enviados no son válidos.", "campos": { "correo": ["..."] } } }
   ```
   Códigos existentes: `VALIDACION` (422), `NO_AUTENTICADO` (401), `NO_AUTORIZADO` (403), `NO_ENCONTRADO` (404),
-  `CREDENCIALES_INVALIDAS` (401), `USUARIO_INACTIVO` (403), `NO_PUEDES_DESACTIVARTE` (409), `ERROR_INTERNO` (500).
+  `CREDENCIALES_INVALIDAS` (401), `USUARIO_INACTIVO` (403), `NO_PUEDES_DESACTIVARTE` (409), `NO_PUEDES_CAMBIAR_TU_ROL` (409),
+  `ULTIMO_ADMINISTRADOR` (409), `ERROR_INTERNO` (500).
   Para un error de negocio: `throw new ErrorApi('PEDIDO_NO_EDITABLE', 'El pedido ya fue entregado.', 409);`
 - **Validación**: con Form Requests (o `$request->validate()` para filtros simples). Nunca validar a mano.
   Los mensajes salen en español de `lang/es/validation.php` (el idioma está fijo en `config/app.php`);

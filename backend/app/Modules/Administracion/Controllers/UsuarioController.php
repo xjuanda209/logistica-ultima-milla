@@ -48,6 +48,14 @@ class UsuarioController extends Controller
     {
         $usuario = Usuario::query()->findOrFail($id);
 
+        if ($usuario->rol->value !== $request->validated('rol')) {
+            if ($usuario->is($request->user())) {
+                throw new ErrorApi('NO_PUEDES_CAMBIAR_TU_ROL', 'No puedes cambiar tu propio rol.', 409);
+            }
+
+            $this->impedirDejarSinAdministrador($usuario);
+        }
+
         $usuario->update($this->datosSegunRol($request->validated(), $usuario));
 
         return new UsuarioResource($usuario->load(['comercio', 'zona']));
@@ -64,6 +72,10 @@ class UsuarioController extends Controller
 
         if (! $activo && $usuario->is($request->user())) {
             throw new ErrorApi('NO_PUEDES_DESACTIVARTE', 'No puedes desactivar tu propio usuario.', 409);
+        }
+
+        if (! $activo) {
+            $this->impedirDejarSinAdministrador($usuario);
         }
 
         $usuario->update(['activo' => $activo]);
@@ -90,6 +102,31 @@ class UsuarioController extends Controller
         }
 
         return new UsuarioResource($usuario->load(['comercio', 'zona']));
+    }
+
+    /**
+     * El sistema siempre debe conservar al menos un administrador activo: se llama antes
+     * de desactivar a un usuario o de quitarle el rol de administrador.
+     */
+    private function impedirDejarSinAdministrador(Usuario $usuario): void
+    {
+        if ($usuario->rol !== Rol::Administrador || ! $usuario->activo) {
+            return;
+        }
+
+        $hayOtro = Usuario::query()
+            ->where('rol', Rol::Administrador)
+            ->where('activo', true)
+            ->whereKeyNot($usuario->id)
+            ->exists();
+
+        if (! $hayOtro) {
+            throw new ErrorApi(
+                'ULTIMO_ADMINISTRADOR',
+                'Es el último administrador activo del sistema: no se puede desactivar ni cambiar de rol.',
+                409,
+            );
+        }
     }
 
     /**
