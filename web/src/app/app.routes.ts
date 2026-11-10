@@ -67,6 +67,29 @@ export const routes: Routes = [
         data: { roles: rolesDe('/administracion') },
         loadComponent: () =>
           import('./features/administracion/administracion').then((m) => m.Administracion),
+        // Las páginas hijas heredan el rolGuard del padre.
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'usuarios' },
+          {
+            path: 'usuarios',
+            loadComponent: () =>
+              import('./features/administracion/usuarios').then((m) => m.Usuarios),
+          },
+          {
+            path: 'zonas',
+            loadComponent: () => import('./features/administracion/zonas').then((m) => m.Zonas),
+          },
+          {
+            path: 'tipos-incidencia',
+            loadComponent: () =>
+              import('./features/administracion/tipos-incidencia').then((m) => m.TiposIncidencia),
+          },
+          {
+            path: 'configuracion',
+            loadComponent: () =>
+              import('./features/administracion/configuracion').then((m) => m.Configuracion),
+          },
+        ],
       },
     ],
   },

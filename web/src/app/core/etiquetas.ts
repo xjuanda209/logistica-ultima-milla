@@ -52,3 +52,19 @@ export function mensajeDeError(error: unknown): string {
 
   return 'Ocurrió un error inesperado.';
 }
+
+/** Errores de validación por campo (error.campos) para pintarlos junto a cada input. */
+export type ErroresDeCampos = Record<string, string[] | undefined>;
+
+/** Saca los errores por campo de un error 422 de la API. Si no hay, devuelve {}. */
+export function camposDeError(error: unknown): ErroresDeCampos {
+  if (error instanceof HttpErrorResponse) {
+    const campos = (error.error as ErrorApi | null)?.error?.campos;
+
+    if (campos && !Array.isArray(campos)) {
+      return campos;
+    }
+  }
+
+  return {};
+}

@@ -1,0 +1,246 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h5 mb-0">Usuarios</h2>
+  <button type="button" class="btn btn-primary" (click)="abrirFormulario()">Nuevo usuario</button>
+</div>
+
+@if (exito(); as mensaje) {
+  <div class="alert alert-success d-flex justify-content-between align-items-center" role="status">
+    <span>{{ mensaje }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="exito.set(null)"></button>
+  </div>
+}
+
+@if (error(); as mensaje) {
+  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+}
+
+@if (cargando()) {
+  <p class="text-body-secondary">Cargando…</p>
+} @else if (usuarios().length > 0) {
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Comercio / Zona</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (usuario of usuarios(); track usuario.id) {
+          <tr>
+            <td class="fw-semibold">
+              {{ usuario.nombre }}
+              @if (usuario.id === miId) {
+                <span class="badge text-bg-light border ms-1">Tú</span>
+              }
+            </td>
+            <td>{{ usuario.correo }}</td>
+            <td>{{ nombresRol[usuario.rol] }}</td>
+            <td>{{ usuario.comercio?.nombre ?? usuario.zona?.nombre ?? '—' }}</td>
+            <td>
+              <span class="badge" [class]="usuario.activo ? 'text-bg-success' : 'text-bg-secondary'">
+                {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-end text-nowrap">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm me-1"
+                (click)="abrirFormulario(usuario)"
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm me-1"
+                (click)="abrirPassword(usuario)"
+              >
+                Contraseña
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class]="usuario.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+                [disabled]="usuario.id === miId || cambiandoEstado() === usuario.id"
+                [title]="usuario.id === miId ? 'No puedes desactivar tu propio usuario' : ''"
+                (click)="cambiarEstado(usuario)"
+              >
+                {{ usuario.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginacion [meta]="meta()" (cambiar)="cargar($event)" />
+}
+
+@if (modal() === 'formulario') {
+  <app-modal [titulo]="editando() ? 'Editar usuario' : 'Nuevo usuario'" (cerrar)="cerrarModal()">
+    <form (ngSubmit)="guardar()">
+      @if (errorFormulario(); as mensaje) {
+        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+      }
+
+      <div class="mb-3">
+        <label for="usuario-nombre" class="form-label">Nombre</label>
+        <input
+          id="usuario-nombre"
+          name="nombre"
+          type="text"
+          class="form-control"
+          maxlength="120"
+          required
+          [class.is-invalid]="errores()['nombre']"
+          [(ngModel)]="formulario.nombre"
+        />
+        <app-error-campo [mensajes]="errores()['nombre']" />
+      </div>
+
+      <div class="mb-3">
+        <label for="usuario-correo" class="form-label">Correo</label>
+        <input
+          id="usuario-correo"
+          name="correo"
+          type="email"
+          class="form-control"
+          maxlength="120"
+          autocomplete="off"
+          required
+          [class.is-invalid]="errores()['correo']"
+          [(ngModel)]="formulario.correo"
+        />
+        <app-error-campo [mensajes]="errores()['correo']" />
+      </div>
+
+      @if (!editando()) {
+        <div class="mb-3">
+          <label for="usuario-password" class="form-label">Contraseña inicial</label>
+          <input
+            id="usuario-password"
+            name="password"
+            type="password"
+            class="form-control"
+            autocomplete="new-password"
+            aria-describedby="usuario-password-ayuda"
+            required
+            [class.is-invalid]="errores()['password']"
+            [(ngModel)]="formulario.password"
+          />
+          <app-error-campo [mensajes]="errores()['password']" />
+          <div id="usuario-password-ayuda" class="form-text">Mínimo 8 caracteres.</div>
+        </div>
+      }
+
+      <div class="mb-3">
+        <label for="usuario-rol" class="form-label">Rol</label>
+        <select
+          id="usuario-rol"
+          name="rol"
+          class="form-select"
+          [class.is-invalid]="errores()['rol']"
+          [(ngModel)]="formulario.rol"
+        >
+          @for (rol of roles; track rol) {
+            <option [ngValue]="rol">{{ nombresRol[rol] }}</option>
+          }
+        </select>
+        <app-error-campo [mensajes]="errores()['rol']" />
+      </div>
+
+      @if (formulario.rol === 'comercio') {
+        <div class="mb-3">
+          <label for="usuario-comercio" class="form-label">Comercio</label>
+          <select
+            id="usuario-comercio"
+            name="comercio_id"
+            class="form-select"
+            [class.is-invalid]="errores()['comercio_id']"
+            [(ngModel)]="formulario.comercio_id"
+          >
+            <option [ngValue]="null">Elige un comercio…</option>
+            @for (comercio of comercios(); track comercio.id) {
+              <option [ngValue]="comercio.id">{{ comercio.nombre }}</option>
+            }
+          </select>
+          <app-error-campo [mensajes]="errores()['comercio_id']" />
+        </div>
+      }
+
+      @if (formulario.rol === 'repartidor') {
+        <div class="mb-3">
+          <label for="usuario-zona" class="form-label">Zona</label>
+          <select
+            id="usuario-zona"
+            name="zona_id"
+            class="form-select"
+            [class.is-invalid]="errores()['zona_id']"
+            [(ngModel)]="formulario.zona_id"
+          >
+            <option [ngValue]="null">Elige una zona…</option>
+            @for (zona of zonas(); track zona.id) {
+              <option [ngValue]="zona.id">{{ zona.nombre }}</option>
+            }
+          </select>
+          <app-error-campo [mensajes]="errores()['zona_id']" />
+        </div>
+      }
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (modal() === 'password') {
+  <app-modal titulo="Restablecer contraseña" (cerrar)="cerrarModal()">
+    <form (ngSubmit)="guardarPassword()">
+      @if (errorFormulario(); as mensaje) {
+        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+      }
+
+      <p>
+        Define una contraseña nueva para <strong>{{ editando()?.nombre }}</strong>. Sus sesiones
+        abiertas se cerrarán.
+      </p>
+
+      <div class="mb-4">
+        <label for="password-nueva" class="form-label">Contraseña nueva</label>
+        <input
+          id="password-nueva"
+          name="password"
+          type="password"
+          class="form-control"
+          autocomplete="new-password"
+          aria-describedby="password-nueva-ayuda"
+          required
+          [class.is-invalid]="errores()['password']"
+          [(ngModel)]="passwordNueva"
+        />
+        <app-error-campo [mensajes]="errores()['password']" />
+        <div id="password-nueva-ayuda" class="form-text">Mínimo 8 caracteres.</div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Restablecer' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
