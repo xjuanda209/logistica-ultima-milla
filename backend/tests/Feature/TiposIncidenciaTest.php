@@ -116,7 +116,45 @@ test('los tipos de incidencia responden 401 sin token', function (string $metodo
         ->assertJsonPath('error.codigo', 'NO_AUTENTICADO');
 })->with('rutas de tipos de incidencia');
 
-test('solo el administrador puede administrar tipos de incidencia', function (string $metodo, string $ruta) {
+test('cualquier usuario autenticado puede listar los tipos de incidencia', function (string $rol) {
+    TipoIncidencia::factory()->count(2)->create();
+    Sanctum::actingAs(Usuario::factory()->{$rol}()->create());
+
+    $this->getJson('/api/tipos-incidencia')
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonStructure(['data' => [['id', 'nombre', 'activo']]]);
+})->with(['operador', 'comercio', 'repartidor']);
+
+test('los tipos de incidencia se pueden filtrar con activos=1', function () {
+    Sanctum::actingAs(Usuario::factory()->repartidor()->create());
+    $activo = TipoIncidencia::factory()->create();
+    TipoIncidencia::factory()->inactivo()->count(2)->create();
+
+    $this->getJson('/api/tipos-incidencia')->assertOk()->assertJsonCount(3, 'data');
+    $this->getJson('/api/tipos-incidencia?activos=0')->assertOk()->assertJsonCount(3, 'data');
+
+    $this->getJson('/api/tipos-incidencia?activos=1')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $activo->id)
+        ->assertJsonPath('meta.total', 1);
+
+    $this->getJson('/api/tipos-incidencia?activos=quizas')
+        ->assertUnprocessable()
+        ->assertJsonStructure(['error' => ['campos' => ['activos']]]);
+});
+
+test('la lista de tipos de incidencia acepta por_pagina entre 1 y 100', function () {
+    Sanctum::actingAs($this->administrador);
+    TipoIncidencia::factory()->count(25)->create();
+
+    $this->getJson('/api/tipos-incidencia')->assertOk()->assertJsonCount(20, 'data');
+    $this->getJson('/api/tipos-incidencia?por_pagina=100&activos=1')->assertOk()->assertJsonCount(25, 'data');
+    $this->getJson('/api/tipos-incidencia?por_pagina=101')->assertUnprocessable();
+});
+
+test('solo el administrador puede crear, editar y activar o desactivar tipos de incidencia', function (string $metodo, string $ruta) {
     foreach ([Rol::Operador, Rol::Comercio, Rol::Repartidor] as $rol) {
         Sanctum::actingAs(Usuario::factory()->{$rol->value}()->create());
 
@@ -126,4 +164,8 @@ test('solo el administrador puede administrar tipos de incidencia', function (st
     }
 
     expect(TipoIncidencia::query()->count())->toBe(0);
-})->with('rutas de tipos de incidencia');
+})->with([
+    'crear' => ['POST', '/api/tipos-incidencia'],
+    'editar' => ['PUT', '/api/tipos-incidencia/1'],
+    'cambiar estado' => ['PUT', '/api/tipos-incidencia/1/estado'],
+]);

@@ -7,6 +7,7 @@ use App\Modules\Administracion\Requests\CambiarActivoRequest;
 use App\Modules\Administracion\Requests\GuardarTipoIncidenciaRequest;
 use App\Modules\Administracion\Resources\TipoIncidenciaResource;
 use App\Modules\Incidencias\Models\TipoIncidencia;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -17,12 +18,22 @@ class TipoIncidenciaController extends Controller
 {
     /**
      * GET /api/tipos-incidencia — lista paginada (activos e inactivos).
+     * Con ?activos=1 devuelve solo los activos, y con ?por_pagina=100 sirve para un <select>:
+     * es lo que debe pedir el formulario de reportar una incidencia.
      */
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
-        return TipoIncidenciaResource::collection(
-            TipoIncidencia::query()->orderBy('nombre')->paginate(20),
-        );
+        $filtros = $request->validate([
+            'activos' => ['nullable', 'boolean'],
+            'por_pagina' => ['nullable', 'integer', 'between:1,100'],
+        ]);
+
+        $tipos = TipoIncidencia::query()
+            ->when($request->boolean('activos'), fn ($query) => $query->where('activo', true))
+            ->orderBy('nombre')
+            ->paginate((int) ($filtros['por_pagina'] ?? 20));
+
+        return TipoIncidenciaResource::collection($tipos);
     }
 
     /**

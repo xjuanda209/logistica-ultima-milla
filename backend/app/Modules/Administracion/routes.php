@@ -10,8 +10,15 @@ use Illuminate\Support\Facades\Route;
 /*
 | Rutas del módulo Administración (usuarios, zonas, tipos de incidencia, configuración).
 | Se cargan desde routes/api.php dentro del grupo auth:sanctum.
-| Todo el módulo es exclusivo del administrador.
 */
+
+// Catálogos: cualquier usuario autenticado puede LEERLOS (los usan los formularios de
+// Pedidos e Incidencias). Crear, editar y activar/desactivar es solo del administrador.
+Route::middleware('rol:administrador,operador,comercio,repartidor')->group(function (): void {
+    Route::get('/zonas', [ZonaController::class, 'index']);
+    Route::get('/comercios', [ComercioController::class, 'index']);
+    Route::get('/tipos-incidencia', [TipoIncidenciaController::class, 'index']);
+});
 
 Route::middleware('rol:administrador')->group(function (): void {
     Route::get('/usuarios', [UsuarioController::class, 'index']);
@@ -20,13 +27,9 @@ Route::middleware('rol:administrador')->group(function (): void {
     Route::put('/usuarios/{id}/estado', [UsuarioController::class, 'cambiarEstado'])->whereNumber('id');
     Route::put('/usuarios/{id}/password', [UsuarioController::class, 'restablecerPassword'])->whereNumber('id');
 
-    Route::get('/comercios', [ComercioController::class, 'index']);
-
-    Route::get('/zonas', [ZonaController::class, 'index']);
     Route::post('/zonas', [ZonaController::class, 'store']);
     Route::put('/zonas/{id}', [ZonaController::class, 'update'])->whereNumber('id');
 
-    Route::get('/tipos-incidencia', [TipoIncidenciaController::class, 'index']);
     Route::post('/tipos-incidencia', [TipoIncidenciaController::class, 'store']);
     Route::put('/tipos-incidencia/{id}', [TipoIncidenciaController::class, 'update'])->whereNumber('id');
     Route::put('/tipos-incidencia/{id}/estado', [TipoIncidenciaController::class, 'cambiarEstado'])->whereNumber('id');

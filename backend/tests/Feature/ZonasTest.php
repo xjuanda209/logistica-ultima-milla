@@ -112,7 +112,18 @@ test('las zonas responden 401 sin token', function (string $metodo, string $ruta
         ->assertJsonPath('error.codigo', 'NO_AUTENTICADO');
 })->with('rutas de zonas');
 
-test('solo el administrador puede administrar zonas', function (string $metodo, string $ruta) {
+test('cualquier usuario autenticado puede listar las zonas', function (string $rol) {
+    Zona::factory()->count(2)->create();
+    $usuario = Usuario::factory()->{$rol}()->create();
+    Sanctum::actingAs($usuario);
+
+    $this->getJson('/api/zonas?por_pagina=100')
+        ->assertOk()
+        ->assertJsonCount(Zona::query()->count(), 'data')
+        ->assertJsonStructure(['data' => [['id', 'nombre', 'descripcion']]]);
+})->with(['operador', 'comercio', 'repartidor']);
+
+test('solo el administrador puede crear y editar zonas', function (string $metodo, string $ruta) {
     foreach ([Rol::Operador, Rol::Comercio, Rol::Repartidor] as $rol) {
         Sanctum::actingAs(Usuario::factory()->{$rol->value}()->create());
 
@@ -122,4 +133,7 @@ test('solo el administrador puede administrar zonas', function (string $metodo, 
     }
 
     expect(Zona::query()->where('nombre', 'Intrusa')->exists())->toBeFalse();
-})->with('rutas de zonas');
+})->with([
+    'crear' => ['POST', '/api/zonas'],
+    'editar' => ['PUT', '/api/zonas/1'],
+]);

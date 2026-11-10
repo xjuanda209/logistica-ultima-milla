@@ -177,6 +177,10 @@ Route::middleware('rol:administrador')->group(function (): void {
   Agrega el código nuevo a la lista de "Reglas de la API".
 - **Catálogo para un `<select>`**: la lista acepta `?por_pagina=` (1 a 100) y la web pide `por_pagina: 100`
   (ver `ZonaController::index`). No crees otra ruta "sin paginar".
+- **Catálogos ya disponibles para cualquier rol** (solo lectura): `GET /zonas`, `GET /comercios` (el comercio
+  solo recibe el suyo) y `GET /tipos-incidencia` (con `?activos=1` trae solo los activos: úsalo en los
+  formularios). Si la lectura y la escritura tienen roles distintos, van en dos grupos de rutas
+  (ver `Administracion/routes.php`) y las pruebas de 403 cubren solo las rutas de escritura.
 - Si el CRUD depende de pedidos, filtra con `visiblesPara()` y recuerda el `historial_pedido`.
 
 ### 2. Pruebas (un archivo por recurso en `tests/Feature`)

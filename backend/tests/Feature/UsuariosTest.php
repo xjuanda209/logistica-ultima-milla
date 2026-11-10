@@ -378,7 +378,6 @@ dataset('rutas de usuarios', [
     'editar' => ['PUT', '/api/usuarios/1'],
     'cambiar estado' => ['PUT', '/api/usuarios/1/estado'],
     'restablecer contraseña' => ['PUT', '/api/usuarios/1/password'],
-    'listar comercios' => ['GET', '/api/comercios'],
 ]);
 
 test('la administración de usuarios responde 401 sin token', function (string $metodo, string $ruta) {
@@ -399,7 +398,7 @@ test('solo el administrador puede administrar usuarios', function (string $metod
     expect(Usuario::query()->where('correo', 'olga@prueba.test')->exists())->toBeFalse();
 })->with('rutas de usuarios');
 
-// ---------- Comercios (para el formulario de usuarios) ----------
+// ---------- Comercios (catálogo de solo lectura) ----------
 
 test('el administrador lista los comercios y puede pedir hasta 100 por página', function () {
     comoAdministrador();
@@ -415,4 +414,36 @@ test('el administrador lista los comercios y puede pedir hasta 100 por página',
     $this->getJson('/api/comercios?por_pagina=500')
         ->assertUnprocessable()
         ->assertJsonStructure(['error' => ['campos' => ['por_pagina']]]);
+});
+
+test('la lista de comercios responde 401 sin token', function () {
+    $this->getJson('/api/comercios')
+        ->assertUnauthorized()
+        ->assertJsonPath('error.codigo', 'NO_AUTENTICADO');
+});
+
+test('administrador, operador y repartidor ven todos los comercios', function (string $rol) {
+    Comercio::factory()->count(3)->create();
+    Sanctum::actingAs(Usuario::factory()->{$rol}()->create());
+
+    $this->getJson('/api/comercios')->assertOk()->assertJsonCount(3, 'data');
+})->with(['administrador', 'operador', 'repartidor']);
+
+test('el usuario de un comercio solo ve su propio comercio', function () {
+    $miComercio = Comercio::factory()->create();
+    Comercio::factory()->count(3)->create();
+    Sanctum::actingAs(Usuario::factory()->comercio($miComercio)->create());
+
+    $this->getJson('/api/comercios?por_pagina=100')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $miComercio->id)
+        ->assertJsonPath('meta.total', 1);
+});
+
+test('un usuario comercio sin comercio asignado no ve ninguno', function () {
+    Comercio::factory()->count(2)->create();
+    Sanctum::actingAs(Usuario::factory()->create(['rol' => Rol::Comercio, 'comercio_id' => null]));
+
+    $this->getJson('/api/comercios')->assertOk()->assertJsonCount(0, 'data');
 });
