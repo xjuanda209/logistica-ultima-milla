@@ -81,9 +81,11 @@ y un `routes.php`.
   { "error": { "codigo": "VALIDACION", "mensaje": "Los datos enviados no son válidos.", "campos": { "correo": ["..."] } } }
   ```
   Códigos existentes: `VALIDACION` (422), `NO_AUTENTICADO` (401), `NO_AUTORIZADO` (403), `NO_ENCONTRADO` (404),
-  `CREDENCIALES_INVALIDAS` (401), `USUARIO_INACTIVO` (403), `ERROR_INTERNO` (500).
+  `CREDENCIALES_INVALIDAS` (401), `USUARIO_INACTIVO` (403), `NO_PUEDES_DESACTIVARTE` (409), `ERROR_INTERNO` (500).
   Para un error de negocio: `throw new ErrorApi('PEDIDO_NO_EDITABLE', 'El pedido ya fue entregado.', 409);`
 - **Validación**: con Form Requests (o `$request->validate()` para filtros simples). Nunca validar a mano.
+  Los mensajes salen en español de `lang/es/validation.php` (el idioma está fijo en `config/app.php`);
+  si usas una regla o un campo que no está ahí, agrega su mensaje o su nombre legible en `attributes`.
 - **CORS**: solo `http://localhost:4200` (web) y `http://localhost:8100` (móvil), en `config/cors.php`.
 
 ### Cómo agregar una funcionalidad al backend
@@ -114,9 +116,9 @@ core/        api.service.ts      única puerta a la API (get/post/put/delete)
              guards.ts           authGuard, invitadoGuard, rolGuard
              menu.ts             opciones del menú y roles de cada una
              modelos.ts          interfaces de lo que devuelve la API
-             etiquetas.ts        textos y colores de estados; mensajeDeError()
+             etiquetas.ts        textos y colores de estados; mensajeDeError() y camposDeError()
 layout/      barra superior + menú lateral según el rol
-shared/      componentes reutilizables (paginacion)
+shared/      componentes reutilizables (paginacion, modal, error-campo)
 features/    login, panel, pedidos, clientes, incidencias, administracion, despacho
 ```
 
@@ -131,6 +133,94 @@ features/    login, panel, pedidos, clientes, incidencias, administracion, despa
 5. `ng build`.
 
 Estilos con clases de Bootstrap; no agregar librerías de componentes.
+
+## Cómo hacer un CRUD completo
+
+El módulo de referencia es **Administración**. El ejemplo más corto es **Zonas**; cópialo y cambia los nombres.
+Usuarios muestra los casos menos comunes (campos que dependen de otro, regla de negocio, activar/desactivar).
+
+| Pieza       | Archivo de ejemplo                                                        |
+| ----------- | ------------------------------------------------------------------------- |
+| Request     | `backend/app/Modules/Administracion/Requests/GuardarZonaRequest.php`      |
+| Controlador | `backend/app/Modules/Administracion/Controllers/ZonaController.php`       |
+| Resource    | `backend/app/Modules/Administracion/Resources/ZonaResource.php`           |
+| Rutas       | `backend/app/Modules/Administracion/routes.php`                           |
+| Pruebas     | `backend/tests/Feature/ZonasTest.php`                                     |
+| Página web  | `web/src/app/features/administracion/zonas.ts` y `zonas.html`             |
+
+### 1. Backend
+
+Rutas de un CRUD (no se usa `Route::apiResource`; cada ruta se escribe, con `{id}` numérico):
+
+```php
+Route::middleware('rol:administrador')->group(function (): void {
+    Route::get('/zonas', [ZonaController::class, 'index']);
+    Route::post('/zonas', [ZonaController::class, 'store']);
+    Route::put('/zonas/{id}', [ZonaController::class, 'update'])->whereNumber('id');
+    Route::put('/tipos-incidencia/{id}/estado', [TipoIncidenciaController::class, 'cambiarEstado'])->whereNumber('id');
+});
+```
+
+- **Un solo Request para crear y editar**: `Guardar<Cosa>Request`. La regla de único ignora el propio registro con
+  `Rule::unique('zonas', 'nombre')->ignore($this->route('id'))` (al crear no hay `id` y no ignora nada).
+  Si un campo solo aplica al crear, agrégalo con `if ($this->isMethod('POST'))` (ver `GuardarUsuarioRequest`).
+  Un campo obligatorio según otro: `required_if:rol,comercio`.
+- **Controlador**: `index` con `orderBy(...)->paginate(20)`; `store` con `Modelo::query()->create($request->validated())`
+  (responde 201 solo); `update` con `findOrFail($id)` + `update($request->validated())` (un id inexistente da 404 solo).
+  Siempre `$request->validated()`, nunca `$request->all()`. Lo que el cliente no debe decidir (por ejemplo `activo`
+  al crear) lo pone el controlador, no el Request.
+- **Activar / desactivar** no es un `DELETE`: es `PUT /<cosas>/{id}/estado` con `{ "activo": true|false }`,
+  validado con `CambiarActivoRequest`. No se borran registros que otras tablas referencian.
+- **Reglas de negocio** (lo que no es validar un campo) van en el controlador con `ErrorApi` y código propio:
+  `throw new ErrorApi('NO_PUEDES_DESACTIVARTE', 'No puedes desactivar tu propio usuario.', 409);`
+  Agrega el código nuevo a la lista de "Reglas de la API".
+- **Catálogo para un `<select>`**: la lista acepta `?por_pagina=` (1 a 100) y la web pide `por_pagina: 100`
+  (ver `ZonaController::index`). No crees otra ruta "sin paginar".
+- Si el CRUD depende de pedidos, filtra con `visiblesPara()` y recuerda el `historial_pedido`.
+
+### 2. Pruebas (un archivo por recurso en `tests/Feature`)
+
+Lista mínima, la misma de `ZonasTest.php`:
+
+1. Listar: estructura (`data`, `meta`) y orden.
+2. Crear: caso feliz (201) y que quedó en la base.
+3. Validación: obligatorio, límites y **único**, comprobando `error.codigo = VALIDACION` y el mensaje en
+   `error.campos.<campo>.0`.
+4. Editar: caso feliz, conservar su propio valor único, chocar con el de otro registro y 404 si no existe.
+5. Cada regla de negocio: su código de error y que el dato **no cambió**.
+6. Permisos con un `dataset` de `[método, ruta]`: 401 sin token y 403 con cada rol no permitido, comprobando
+   además que no se guardó nada.
+7. Si aplica: que un comercio/repartidor no ve ni modifica datos ajenos (404).
+
+Usa factories (crea la del modelo si no existe) y `Sanctum::actingAs(Usuario::factory()->administrador()->create())`.
+
+### 3. Web (tabla + formulario en modal)
+
+1. Interfaz en `core/modelos.ts`, igual al Resource.
+2. Componente con estos signals — lista: `datos`, `meta`, `cargando`, `error`, `exito`;
+   formulario: `modalAbierto`, `editando` (`null` = crear), `guardando`, `errorFormulario`, `errores`;
+   y un objeto `formulario` normal enlazado con `[(ngModel)]`.
+3. `guardar()` decide `post` o `put` según `editando()`. Si sale bien: cierra el modal, pone el mensaje en `exito`
+   y recarga la lista. Si falla: `errorFormulario.set(mensajeDeError(error))` y `errores.set(camposDeError(error))`.
+4. En la plantilla, el modal y cada campo:
+   ```html
+   @if (modalAbierto()) {
+     <app-modal [titulo]="editando() ? 'Editar zona' : 'Nueva zona'" (cerrar)="cerrarFormulario()">
+       <form (ngSubmit)="guardar()">
+         <input name="nombre" class="form-control" [class.is-invalid]="errores()['nombre']" [(ngModel)]="formulario.nombre" />
+         <app-error-campo [mensajes]="errores()['nombre']" />
+       </form>
+     </app-modal>
+   }
+   ```
+   La clave de `errores()` es el nombre del campo en la API (`comercio_id`, no `comercio`).
+5. La validación de verdad es la del backend: en la web solo ayudas (`required`, `maxlength`), nunca reglas de negocio.
+6. Menú y ruta como en "Cómo agregar una página a la web". Si el módulo tiene varias páginas, van como rutas
+   hijas con pestañas (ver `features/administracion/administracion.ts` y `app.routes.ts`).
+
+### 4. Antes de terminar
+
+`vendor/bin/pint --dirty`, `php artisan test`, `npx ng build`, y probar a mano crear, editar y un error de validación.
 
 ## Móvil (`movil/src/app`)
 
