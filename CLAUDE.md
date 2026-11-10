@@ -50,6 +50,7 @@ app/
     Enums/                    Rol, EstadoPedido, Prioridad, EstadoIncidencia, ...
     Http/Middleware/CheckRole.php   middleware de roles (alias "rol")
     Errores/                  ManejadorErrores (formato de error) y ErrorApi (errores de negocio)
+    Validacion/               reglas de validación propias (UnicoSinMayusculas)
     Auth/                     AuthController (login, logout, me) y LoginRequest
   Modules/
     Administracion/           Usuario, Zona, Comercio, Configuracion
@@ -163,7 +164,10 @@ Route::middleware('rol:administrador')->group(function (): void {
 ```
 
 - **Un solo Request para crear y editar**: `Guardar<Cosa>Request`. La regla de único ignora el propio registro con
-  `Rule::unique('zonas', 'nombre')->ignore($this->route('id'))` (al crear no hay `id` y no ignora nada).
+  `Rule::unique('usuarios', 'correo')->ignore($this->route('id'))` (al crear no hay `id` y no ignora nada).
+  Para nombres que no deben distinguir mayúsculas ("Centro" = "centro") usa
+  `new UnicoSinMayusculas('zonas', 'nombre', $this->route('id'), 'Ya existe una zona con ese nombre.')`
+  (`app/Shared/Validacion`).
   Si un campo solo aplica al crear, agrégalo con `if ($this->isMethod('POST'))` (ver `GuardarUsuarioRequest`).
   Un campo obligatorio según otro: `required_if:rol,comercio`.
 - **Controlador**: `index` con `orderBy(...)->paginate(20)`; `store` con `Modelo::query()->create($request->validated())`

@@ -55,6 +55,33 @@ test('el nombre del tipo de incidencia es único', function () {
     expect(TipoIncidencia::query()->count())->toBe(1);
 });
 
+test('el nombre único del tipo de incidencia no distingue mayúsculas de minúsculas', function (string $nombre) {
+    Sanctum::actingAs($this->administrador);
+    TipoIncidencia::factory()->create(['nombre' => 'Paquete roto']);
+    $otro = TipoIncidencia::factory()->create(['nombre' => 'Otro']);
+
+    $this->postJson('/api/tipos-incidencia', ['nombre' => $nombre])
+        ->assertUnprocessable()
+        ->assertJsonPath('error.codigo', 'VALIDACION')
+        ->assertJsonPath('error.campos.nombre.0', 'Ya existe un tipo de incidencia con ese nombre.');
+
+    $this->putJson("/api/tipos-incidencia/{$otro->id}", ['nombre' => $nombre])
+        ->assertUnprocessable()
+        ->assertJsonPath('error.campos.nombre.0', 'Ya existe un tipo de incidencia con ese nombre.');
+
+    expect(TipoIncidencia::query()->count())->toBe(2)
+        ->and($otro->fresh()->nombre)->toBe('Otro');
+})->with(['paquete roto', 'PAQUETE ROTO', 'Paquete Roto']);
+
+test('un tipo de incidencia puede cambiar solo las mayúsculas de su propio nombre', function () {
+    Sanctum::actingAs($this->administrador);
+    $tipo = TipoIncidencia::factory()->create(['nombre' => 'paquete roto']);
+
+    $this->putJson("/api/tipos-incidencia/{$tipo->id}", ['nombre' => 'Paquete roto'])
+        ->assertOk()
+        ->assertJsonPath('data.nombre', 'Paquete roto');
+});
+
 test('el administrador edita un tipo de incidencia sin cambiar su estado', function () {
     Sanctum::actingAs($this->administrador);
     $tipo = TipoIncidencia::factory()->inactivo()->create(['nombre' => 'Otro']);

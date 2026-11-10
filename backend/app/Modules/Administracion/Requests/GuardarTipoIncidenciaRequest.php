@@ -2,8 +2,8 @@
 
 namespace App\Modules\Administracion\Requests;
 
+use App\Shared\Validacion\UnicoSinMayusculas;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 /**
  * Valida crear (POST) y editar (PUT) un tipo de incidencia.
@@ -23,18 +23,10 @@ class GuardarTipoIncidenciaRequest extends FormRequest
         return [
             'nombre' => [
                 'required', 'string', 'max:60',
-                Rule::unique('tipos_incidencia', 'nombre')->ignore($this->route('id')),
+                new UnicoSinMayusculas(
+                    'tipos_incidencia', 'nombre', $this->route('id'), 'Ya existe un tipo de incidencia con ese nombre.',
+                ),
             ],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return [
-            'nombre.unique' => 'Ya existe un tipo de incidencia con ese nombre.',
         ];
     }
 }

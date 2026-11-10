@@ -67,6 +67,33 @@ test('el nombre de la zona es único', function () {
     expect(Zona::query()->count())->toBe(1);
 });
 
+test('el nombre único de la zona no distingue mayúsculas de minúsculas', function (string $nombre) {
+    Sanctum::actingAs($this->administrador);
+    Zona::factory()->create(['nombre' => 'Centro']);
+    $otra = Zona::factory()->create(['nombre' => 'Norte']);
+
+    $this->postJson('/api/zonas', ['nombre' => $nombre])
+        ->assertUnprocessable()
+        ->assertJsonPath('error.codigo', 'VALIDACION')
+        ->assertJsonPath('error.campos.nombre.0', 'Ya existe una zona con ese nombre.');
+
+    $this->putJson("/api/zonas/{$otra->id}", ['nombre' => $nombre])
+        ->assertUnprocessable()
+        ->assertJsonPath('error.campos.nombre.0', 'Ya existe una zona con ese nombre.');
+
+    expect(Zona::query()->count())->toBe(2)
+        ->and($otra->fresh()->nombre)->toBe('Norte');
+})->with(['centro', 'CENTRO', 'cEnTrO']);
+
+test('una zona puede cambiar solo las mayúsculas de su propio nombre', function () {
+    Sanctum::actingAs($this->administrador);
+    $zona = Zona::factory()->create(['nombre' => 'centro']);
+
+    $this->putJson("/api/zonas/{$zona->id}", ['nombre' => 'Centro'])
+        ->assertOk()
+        ->assertJsonPath('data.nombre', 'Centro');
+});
+
 test('el administrador edita una zona y puede conservar su nombre', function () {
     Sanctum::actingAs($this->administrador);
     $zona = Zona::factory()->create(['nombre' => 'Centro']);
