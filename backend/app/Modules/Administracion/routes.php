@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Administracion\Controllers\ComercioController;
+use App\Modules\Administracion\Controllers\TipoIncidenciaController;
 use App\Modules\Administracion\Controllers\UsuarioController;
 use App\Modules\Administracion\Controllers\ZonaController;
 use Illuminate\Support\Facades\Route;
@@ -23,4 +24,9 @@ Route::middleware('rol:administrador')->group(function (): void {
     Route::get('/zonas', [ZonaController::class, 'index']);
     Route::post('/zonas', [ZonaController::class, 'store']);
     Route::put('/zonas/{id}', [ZonaController::class, 'update'])->whereNumber('id');
+
+    Route::get('/tipos-incidencia', [TipoIncidenciaController::class, 'index']);
+    Route::post('/tipos-incidencia', [TipoIncidenciaController::class, 'store']);
+    Route::put('/tipos-incidencia/{id}', [TipoIncidenciaController::class, 'update'])->whereNumber('id');
+    Route::put('/tipos-incidencia/{id}/estado', [TipoIncidenciaController::class, 'cambiarEstado'])->whereNumber('id');
 });
