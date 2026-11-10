@@ -1,0 +1,36 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Mis pedidos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="refrescar($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  @if (cargando()) {
+  <div class="ion-padding ion-text-center">
+    <ion-spinner aria-label="Cargando"></ion-spinner>
+  </div>
+  } @else if (error(); as mensaje) {
+  <ion-text color="danger">
+    <p class="ion-padding" role="alert">{{ mensaje }}</p>
+  </ion-text>
+  } @else if (pedidos().length === 0) {
+  <p class="ion-padding">No tienes pedidos asignados.</p>
+  } @else {
+  <ion-list>
+    @for (pedido of pedidos(); track pedido.id) {
+    <ion-item [routerLink]="['/tabs/pedidos', pedido.id]" detail="true">
+      <ion-label>
+        <h2>{{ pedido.numero }} · {{ pedido.cliente?.nombre }}</h2>
+        <p>{{ pedido.direccion }}, {{ pedido.barrio }}</p>
+        <p>{{ pedido.franja_inicio | date: 'dd/MM HH:mm' }} – {{ pedido.franja_fin | date: 'HH:mm' }}</p>
+      </ion-label>
+      <ion-badge slot="end" [color]="estados[pedido.estado].color"> {{ estados[pedido.estado].texto }} </ion-badge>
+    </ion-item>
+    }
+  </ion-list>
+  }
+</ion-content>

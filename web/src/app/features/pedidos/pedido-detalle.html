@@ -1,0 +1,107 @@
+<a routerLink="/pedidos" class="small">← Volver a pedidos</a>
+
+@if (cargando()) {
+  <p class="text-body-secondary mt-3">Cargando…</p>
+} @else if (error(); as mensaje) {
+  <div class="alert alert-danger mt-3" role="alert">{{ mensaje }}</div>
+} @else if (pedido(); as p) {
+  <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-4">
+    <h1 class="h3 mb-0">Pedido {{ p.numero }}</h1>
+    <span class="badge" [class]="estados[p.estado].clase">{{ estados[p.estado].texto }}</span>
+    <span class="badge" [class]="prioridades[p.prioridad].clase">
+      Prioridad {{ prioridades[p.prioridad].texto }}
+    </span>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Entrega</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Cliente</dt>
+            <dd class="col-sm-8">{{ p.cliente?.nombre }} · {{ p.cliente?.telefono }}</dd>
+            <dt class="col-sm-4">Dirección</dt>
+            <dd class="col-sm-8">{{ p.direccion }}, {{ p.barrio }}</dd>
+            <dt class="col-sm-4">Zona</dt>
+            <dd class="col-sm-8">{{ p.zona?.nombre }}</dd>
+            <dt class="col-sm-4">Indicaciones</dt>
+            <dd class="col-sm-8">{{ p.indicaciones ?? '—' }}</dd>
+            <dt class="col-sm-4">Franja</dt>
+            <dd class="col-sm-8">
+              {{ p.franja_inicio | date: 'dd/MM/yyyy HH:mm' }} – {{ p.franja_fin | date: 'HH:mm' }}
+            </dd>
+            <dt class="col-sm-4">Observaciones</dt>
+            <dd class="col-sm-8 mb-0">{{ p.observaciones ?? '—' }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Origen y reparto</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Comercio</dt>
+            <dd class="col-sm-8">{{ p.comercio?.nombre }}</dd>
+            <dt class="col-sm-4">Recogida</dt>
+            <dd class="col-sm-8">{{ p.comercio?.direccion_recogida }}</dd>
+            <dt class="col-sm-4">Repartidor</dt>
+            <dd class="col-sm-8">{{ p.repartidor?.nombre ?? 'Sin asignar' }}</dd>
+            <dt class="col-sm-4">Creado</dt>
+            <dd class="col-sm-8 mb-0">{{ p.created_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header">Productos</div>
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th class="text-end">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (linea of p.lineas ?? []; track linea.id) {
+              <tr>
+                <td>{{ linea.producto }}</td>
+                <td class="text-end">{{ linea.cantidad }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header">Historial</div>
+        <ul class="list-group list-group-flush">
+          @for (evento of p.historial ?? []; track evento.id) {
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between gap-2">
+                <span>
+                  @if (evento.estado_nuevo; as nuevo) {
+                    <span class="badge" [class]="estados[nuevo].clase">
+                      {{ estados[nuevo].texto }}
+                    </span>
+                  }
+                  {{ evento.detalle }}
+                </span>
+                <span class="text-body-secondary small text-nowrap">
+                  {{ evento.created_at | date: 'dd/MM/yyyy HH:mm' }}
+                </span>
+              </div>
+              <div class="small text-body-secondary">{{ evento.usuario }} · {{ evento.canal }}</div>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+}

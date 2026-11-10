@@ -1,0 +1,251 @@
+// Modelo relacional simplificado — Plataforma de Logística de Última Milla
+// Pegar en https://dbdiagram.io
+// Convención: toda llave foránea se llama <tabla_en_singular>_id (o repartidor_id / creado_por cuando apunta a usuarios)
+
+Project logistica_ultima_milla {
+  database_type: 'PostgreSQL'
+}
+
+// ================= TIPOS (valores fijos) =================
+Enum rol {
+  administrador
+  operador
+  comercio
+  repartidor
+}
+
+Enum disponibilidad {
+  disponible
+  no_disponible
+}
+
+Enum prioridad {
+  baja
+  media
+  alta
+}
+
+Enum estado_pedido {
+  creado
+  asignado
+  recogido
+  en_ruta
+  entregado
+  no_entregado
+  cancelado
+}
+
+Enum estado_incidencia {
+  abierta
+  en_revision
+  resuelta
+}
+
+Enum tipo_evento {
+  creacion
+  edicion
+  asignacion
+  cambio_estado
+}
+
+Enum canal {
+  web
+  movil
+}
+
+Enum tipo_evidencia {
+  foto_entrega
+  comprobante
+}
+
+Enum resultado_consulta {
+  respondida
+  fallida
+}
+
+// ================= USUARIOS Y CONFIGURACIÓN =================
+Table usuarios [headercolor: #3B5B92] {
+  id bigserial [pk]
+  nombre varchar(120) [not null]
+  correo varchar(120) [not null, unique]
+  password varchar(255) [not null, note: 'Hash bcrypt']
+  rol rol [not null]
+  activo boolean [not null, default: true]
+  comercio_id bigint [note: 'FK → comercios. Solo si rol = comercio']
+  zona_id bigint [note: 'FK → zonas. Solo si rol = repartidor']
+  disponibilidad disponibilidad [note: 'Solo si rol = repartidor']
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table zonas [headercolor: #3B5B92] {
+  id bigserial [pk]
+  nombre varchar(60) [not null, unique]
+  descripcion text
+}
+
+Table configuracion [headercolor: #3B5B92] {
+  id smallint [pk, default: 1, note: 'Una sola fila']
+  max_pedidos_activos smallint [not null, default: 3, note: 'Máximo por repartidor']
+}
+
+// ================= COMERCIOS, CLIENTES Y PEDIDOS =================
+Table comercios [headercolor: #2E7D6B] {
+  id bigserial [pk]
+  nombre varchar(120) [not null]
+  direccion_recogida varchar(200) [not null]
+  activo boolean [not null, default: true]
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table clientes [headercolor: #2E7D6B] {
+  id bigserial [pk]
+  comercio_id bigint [not null, note: 'FK → comercios']
+  nombre varchar(120) [not null]
+  cedula varchar(15) [not null]
+  telefono varchar(15) [not null]
+  correo varchar(120)
+  direccion varchar(200) [not null]
+  barrio varchar(80) [not null]
+  indicaciones text
+  zona_id bigint [not null, note: 'FK → zonas']
+  created_at timestamptz
+  updated_at timestamptz
+  indexes {
+    (comercio_id, cedula) [unique]
+  }
+}
+
+Table pedidos [headercolor: #2E7D6B] {
+  id bigserial [pk]
+  numero varchar(20) [not null, unique]
+  comercio_id bigint [not null, note: 'FK → comercios']
+  cliente_id bigint [not null, note: 'FK → clientes']
+  repartidor_id bigint [note: 'FK → usuarios (rol repartidor). Vacío mientras está en creado']
+  creado_por bigint [not null, note: 'FK → usuarios']
+  estado estado_pedido [not null, default: 'creado']
+  prioridad prioridad [not null]
+  direccion varchar(200) [not null, note: 'Copia de la dirección del cliente al crear el pedido']
+  barrio varchar(80) [not null]
+  indicaciones text
+  zona_id bigint [not null, note: 'FK → zonas']
+  franja_inicio timestamptz [not null]
+  franja_fin timestamptz [not null]
+  observaciones text
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table lineas_pedido [headercolor: #2E7D6B] {
+  id bigserial [pk]
+  pedido_id bigint [not null, note: 'FK → pedidos']
+  producto varchar(120) [not null]
+  cantidad integer [not null, note: 'Mayor que 0']
+}
+
+Table historial_pedido [headercolor: #2E7D6B] {
+  id bigserial [pk]
+  pedido_id bigint [not null, note: 'FK → pedidos']
+  usuario_id bigint [not null, note: 'FK → usuarios (quién hizo el cambio)']
+  tipo_evento tipo_evento [not null]
+  estado_anterior estado_pedido
+  estado_nuevo estado_pedido
+  detalle text [note: 'Motivo, repartidor asignado o campos editados']
+  canal canal [not null]
+  created_at timestamptz [not null]
+  Note: 'Solo se insertan filas; nunca se editan ni se borran'
+}
+
+// ================= EVIDENCIAS E INCIDENCIAS =================
+Table evidencias [headercolor: #A0522D] {
+  id bigserial [pk]
+  pedido_id bigint [not null, note: 'FK → pedidos']
+  usuario_id bigint [not null, note: 'FK → usuarios (repartidor que la subió)']
+  tipo tipo_evidencia [not null]
+  ruta_archivo varchar(255) [not null, note: 'Ruta en el almacenamiento externo']
+  latitud numeric(9,6) [note: 'Vacía = sin ubicación']
+  longitud numeric(9,6)
+  created_at timestamptz [not null]
+}
+
+Table tipos_incidencia [headercolor: #A0522D] {
+  id bigserial [pk]
+  nombre varchar(60) [not null, unique]
+  activo boolean [not null, default: true]
+}
+
+Table incidencias [headercolor: #A0522D] {
+  id bigserial [pk]
+  pedido_id bigint [not null, note: 'FK → pedidos']
+  tipo_incidencia_id bigint [not null, note: 'FK → tipos_incidencia']
+  usuario_id bigint [not null, note: 'FK → usuarios (quién la reportó)']
+  descripcion text [not null]
+  ruta_foto varchar(255)
+  estado estado_incidencia [not null, default: 'abierta']
+  prioridad prioridad
+  resolucion text
+  nota_comercio text [note: 'Mensaje para el comercio']
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+// ================= ASISTENTE DE IA =================
+Table consultas_asistente [headercolor: #6A4C93] {
+  id bigserial [pk]
+  usuario_id bigint [not null, note: 'FK → usuarios']
+  resultado resultado_consulta [not null]
+  created_at timestamptz [not null]
+}
+
+// ================= GRUPOS (colores en dbdiagram) =================
+TableGroup usuarios_y_configuracion {
+  usuarios
+  zonas
+  configuracion
+}
+
+TableGroup comercios_y_pedidos {
+  comercios
+  clientes
+  pedidos
+  lineas_pedido
+  historial_pedido
+}
+
+TableGroup evidencias_e_incidencias {
+  evidencias
+  tipos_incidencia
+  incidencias
+}
+
+TableGroup asistente_ia {
+  consultas_asistente
+}
+
+// ================= RELACIONES (18) =================
+// muchos (>) a uno
+Ref: usuarios.comercio_id > comercios.id
+Ref: usuarios.zona_id > zonas.id
+
+Ref: clientes.comercio_id > comercios.id
+Ref: clientes.zona_id > zonas.id
+
+Ref: pedidos.comercio_id > comercios.id
+Ref: pedidos.cliente_id > clientes.id
+Ref: pedidos.repartidor_id > usuarios.id
+Ref: pedidos.creado_por > usuarios.id
+Ref: pedidos.zona_id > zonas.id
+
+Ref: lineas_pedido.pedido_id > pedidos.id
+Ref: historial_pedido.pedido_id > pedidos.id
+Ref: historial_pedido.usuario_id > usuarios.id
+
+Ref: evidencias.pedido_id > pedidos.id
+Ref: evidencias.usuario_id > usuarios.id
+
+Ref: incidencias.pedido_id > pedidos.id
+Ref: incidencias.tipo_incidencia_id > tipos_incidencia.id
+Ref: incidencias.usuario_id > usuarios.id
+
+Ref: consultas_asistente.usuario_id > usuarios.id

@@ -1,0 +1,98 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/pedidos" text="Volver"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ pedido()?.numero ?? 'Pedido' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  @if (cargando()) {
+  <div class="ion-padding ion-text-center">
+    <ion-spinner aria-label="Cargando"></ion-spinner>
+  </div>
+  } @else if (error(); as mensaje) {
+  <ion-text color="danger">
+    <p class="ion-padding" role="alert">{{ mensaje }}</p>
+  </ion-text>
+  } @else if (pedido(); as p) {
+  <ion-list>
+    <ion-list-header>
+      <ion-label>Entrega</ion-label>
+    </ion-list-header>
+    <ion-item>
+      <ion-label>Estado</ion-label>
+      <ion-badge slot="end" [color]="estados[p.estado].color">{{ estados[p.estado].texto }}</ion-badge>
+    </ion-item>
+    <ion-item>
+      <ion-label>Prioridad</ion-label>
+      <ion-badge slot="end" [color]="prioridades[p.prioridad].color"> {{ prioridades[p.prioridad].texto }} </ion-badge>
+    </ion-item>
+    <ion-item>
+      <ion-label>
+        <h3>Cliente</h3>
+        <p>{{ p.cliente?.nombre }} · {{ p.cliente?.telefono }}</p>
+      </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-label class="ion-text-wrap">
+        <h3>Dirección</h3>
+        <p>{{ p.direccion }}, {{ p.barrio }} ({{ p.zona?.nombre }})</p>
+        @if (p.indicaciones) {
+        <p>{{ p.indicaciones }}</p>
+        }
+      </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-label>
+        <h3>Franja de entrega</h3>
+        <p>{{ p.franja_inicio | date: 'dd/MM/yyyy HH:mm' }} – {{ p.franja_fin | date: 'HH:mm' }}</p>
+      </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-label class="ion-text-wrap">
+        <h3>Recoger en</h3>
+        <p>{{ p.comercio?.nombre }} · {{ p.comercio?.direccion_recogida }}</p>
+      </ion-label>
+    </ion-item>
+    @if (p.observaciones) {
+    <ion-item>
+      <ion-label class="ion-text-wrap">
+        <h3>Observaciones</h3>
+        <p>{{ p.observaciones }}</p>
+      </ion-label>
+    </ion-item>
+    }
+  </ion-list>
+
+  <ion-list>
+    <ion-list-header>
+      <ion-label>Productos</ion-label>
+    </ion-list-header>
+    @for (linea of p.lineas ?? []; track linea.id) {
+    <ion-item>
+      <ion-label>{{ linea.producto }}</ion-label>
+      <ion-note slot="end">x{{ linea.cantidad }}</ion-note>
+    </ion-item>
+    }
+  </ion-list>
+
+  <ion-list>
+    <ion-list-header>
+      <ion-label>Historial</ion-label>
+    </ion-list-header>
+    @for (evento of p.historial ?? []; track evento.id) {
+    <ion-item>
+      <ion-label class="ion-text-wrap">
+        <h3>{{ evento.estado_nuevo ? estados[evento.estado_nuevo].texto : 'Edición' }}</h3>
+        <p>{{ evento.created_at | date: 'dd/MM/yyyy HH:mm' }} · {{ evento.usuario }}</p>
+        @if (evento.detalle) {
+        <p>{{ evento.detalle }}</p>
+        }
+      </ion-label>
+    </ion-item>
+    }
+  </ion-list>
+  }
+</ion-content>
