@@ -1,0 +1,45 @@
+// Ajustes globales que Bootstrap no expone como variable. Usan las variables del tema,
+// nunca colores escritos a mano. Si algo se puede lograr con una clase de Bootstrap, va en la plantilla.
+
+body {
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01'; // variantes de Inter: "1" recto y dígitos abiertos
+}
+
+// Las cifras de tablas e indicadores se alinean en columnas.
+.table,
+.cifra {
+  font-variant-numeric: tabular-nums;
+}
+
+// Encabezado de tabla discreto: texto pequeño y gris sobre un fondo apenas marcado.
+.table > thead > tr > th {
+  background-color: $gray-100;
+  color: $gray-600;
+  font-size: $small-font-size;
+  white-space: nowrap;
+}
+
+// Dentro de una tarjeta, la última fila no duplica el borde inferior de la tarjeta.
+.card > .table-responsive > .table > tbody > tr:last-child > td {
+  border-bottom-width: 0;
+}
+
+// Foco visible con teclado en enlaces y botones sin estilo propio.
+:focus-visible {
+  outline: 2px solid rgba($primary, 0.55);
+  outline-offset: 2px;
+}
+
+.form-control:focus-visible,
+.form-select:focus-visible,
+.btn:focus-visible {
+  outline: 0; // ya tienen el anillo de foco de Bootstrap
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder-glow .placeholder,
+  .placeholder-wave {
+    animation: none;
+  }
+}
