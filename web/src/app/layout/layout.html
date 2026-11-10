@@ -1,0 +1,58 @@
+<nav class="navbar navbar-dark bg-dark sticky-top px-3">
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-outline-light btn-sm d-md-none"
+      aria-label="Abrir o cerrar el menú"
+      [attr.aria-expanded]="menuAbierto()"
+      (click)="alternarMenu()"
+    >
+      ☰
+    </button>
+    <span class="navbar-brand mb-0 h1 fs-6">Logística de Última Milla</span>
+  </div>
+
+  <div class="d-flex align-items-center gap-3 text-white">
+    <div class="text-end lh-sm d-none d-sm-block">
+      <div class="small fw-semibold">{{ usuario()?.nombre }}</div>
+      <div class="small text-white-50">
+        {{ nombreRol() }}
+        @if (usuario()?.comercio; as comercio) {
+          · {{ comercio.nombre }}
+        }
+      </div>
+    </div>
+    <button type="button" class="btn btn-outline-light btn-sm" (click)="cerrarSesion()">
+      Cerrar sesión
+    </button>
+  </div>
+</nav>
+
+<div class="container-fluid">
+  <div class="row">
+    <aside
+      class="col-md-3 col-lg-2 bg-body-tertiary border-end p-3 d-md-block"
+      [class.d-none]="!menuAbierto()"
+      style="min-height: calc(100vh - 56px)"
+    >
+      <ul class="nav nav-pills flex-column gap-1">
+        @for (opcion of opciones(); track opcion.ruta) {
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [routerLink]="opcion.ruta"
+              routerLinkActive="active"
+              (click)="menuAbierto.set(false)"
+            >
+              {{ opcion.titulo }}
+            </a>
+          </li>
+        }
+      </ul>
+    </aside>
+
+    <main class="col-md-9 col-lg-10 p-4">
+      <router-outlet />
+    </main>
+  </div>
+</div>

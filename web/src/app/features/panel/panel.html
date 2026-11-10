@@ -1,0 +1,33 @@
+<h1 class="h3 mb-4">Panel</h1>
+
+@if (cargando()) {
+  <p class="text-body-secondary">Cargando…</p>
+} @else if (error(); as mensaje) {
+  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+} @else if (resumen(); as datos) {
+  <div class="row g-3">
+    <div class="col-sm-6 col-lg-3">
+      <a class="card h-100 text-decoration-none border-primary" routerLink="/pedidos">
+        <div class="card-body">
+          <div class="text-body-secondary small">Total de pedidos</div>
+          <div class="display-6 fw-semibold">{{ datos.total }}</div>
+        </div>
+      </a>
+    </div>
+
+    @for (tarjeta of tarjetas(); track tarjeta.estado) {
+      <div class="col-sm-6 col-lg-3">
+        <a
+          class="card h-100 text-decoration-none"
+          routerLink="/pedidos"
+          [queryParams]="{ estado: tarjeta.estado }"
+        >
+          <div class="card-body">
+            <span class="badge mb-2" [class]="tarjeta.clase">{{ tarjeta.texto }}</span>
+            <div class="display-6 fw-semibold">{{ tarjeta.cantidad }}</div>
+          </div>
+        </a>
+      </div>
+    }
+  </div>
+}
