@@ -71,7 +71,11 @@ class UsuarioController extends Controller
         $activo = $request->boolean('activo');
 
         if (! $activo && $usuario->is($request->user())) {
-            throw new ErrorApi('NO_PUEDES_DESACTIVARTE', 'No puedes desactivar tu propio usuario.', 409);
+            throw new ErrorApi(
+                'NO_PUEDES_DESACTIVARTE',
+                'No puedes desactivar tu propia cuenta: el sistema debe conservar al menos un administrador activo.',
+                409,
+            );
         }
 
         if (! $activo) {

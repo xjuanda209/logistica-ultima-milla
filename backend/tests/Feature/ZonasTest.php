@@ -32,6 +32,61 @@ test('la lista de zonas acepta por_pagina entre 1 y 100', function () {
         ->assertJsonStructure(['error' => ['campos' => ['por_pagina']]]);
 });
 
+test('con con_repartidores cada zona trae sus repartidores activos ordenados por nombre', function () {
+    Sanctum::actingAs($this->administrador);
+    $centro = Zona::factory()->create(['nombre' => 'Centro']);
+    Zona::factory()->create(['nombre' => 'Norte']);
+    Usuario::factory()->repartidor($centro)->create(['nombre' => 'Pedro']);
+    Usuario::factory()->repartidor($centro)->create(['nombre' => 'Ana']);
+    Usuario::factory()->repartidor($centro)->inactivo()->create(['nombre' => 'Inactivo']);
+
+    $this->getJson('/api/zonas?con_repartidores=1')
+        ->assertOk()
+        ->assertJsonPath('data.0.nombre', 'Centro')
+        ->assertJsonCount(2, 'data.0.repartidores')
+        ->assertJsonPath('data.0.repartidores.0.nombre', 'Ana')
+        ->assertJsonPath('data.0.repartidores.1.nombre', 'Pedro')
+        ->assertJsonStructure(['data' => [['id', 'nombre', 'descripcion', 'repartidores' => [['id', 'nombre']]]]])
+        ->assertJsonPath('data.1.nombre', 'Norte')
+        ->assertJsonCount(0, 'data.1.repartidores');
+});
+
+test('sin con_repartidores la lista de zonas no trae repartidores', function () {
+    Sanctum::actingAs($this->administrador);
+    Usuario::factory()->repartidor()->create();
+
+    $this->getJson('/api/zonas')
+        ->assertOk()
+        ->assertJsonMissingPath('data.0.repartidores');
+});
+
+test('el operador también puede ver los repartidores de cada zona', function () {
+    Sanctum::actingAs(Usuario::factory()->operador()->create());
+    Usuario::factory()->repartidor()->create(['nombre' => 'Ana']);
+
+    $this->getJson('/api/zonas?con_repartidores=1')
+        ->assertOk()
+        ->assertJsonPath('data.0.repartidores.0.nombre', 'Ana');
+});
+
+test('comercio y repartidor no reciben los repartidores de las zonas aunque los pidan', function (string $rol) {
+    Usuario::factory()->repartidor()->create();
+    Sanctum::actingAs(Usuario::factory()->{$rol}()->create());
+
+    $this->getJson('/api/zonas?con_repartidores=1')
+        ->assertOk()
+        ->assertJsonMissingPath('data.0.repartidores');
+})->with(['comercio', 'repartidor']);
+
+test('con_repartidores debe ser verdadero o falso', function () {
+    Sanctum::actingAs($this->administrador);
+
+    $this->getJson('/api/zonas?con_repartidores=talvez')
+        ->assertUnprocessable()
+        ->assertJsonPath('error.codigo', 'VALIDACION')
+        ->assertJsonPath('error.campos.con_repartidores.0', 'El campo con repartidores debe ser verdadero o falso.');
+});
+
 test('el administrador crea una zona', function () {
     Sanctum::actingAs($this->administrador);
 

@@ -25,6 +25,8 @@ class UsuarioResource extends JsonResource
             'comercio_id' => $this->comercio_id,
             'zona_id' => $this->zona_id,
             'disponibilidad' => $this->disponibilidad,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
             'comercio' => $this->whenLoaded('comercio', fn (): ?array => $this->comercio === null ? null : [
                 'id' => $this->comercio->id,
                 'nombre' => $this->comercio->nombre,

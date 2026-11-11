@@ -25,7 +25,7 @@ import { ErrorCampo } from './error-campo';
         <span aria-hidden="true">*</span>
       }
       @if (nota(); as texto) {
-        <span class="fw-normal">({{ texto }})</span>
+        <span class="fw-normal ms-1">({{ texto }})</span>
       }
     </label>
     <ng-content />

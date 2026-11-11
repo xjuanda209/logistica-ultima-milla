@@ -1,244 +1,291 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h5 mb-0">Usuarios</h2>
-  <button type="button" class="btn btn-primary" (click)="abrirFormulario()">Nuevo usuario</button>
-</div>
+<div class="d-grid gap-4">
+  <app-tarjeta titulo="Usuarios del sistema">
+    <button acciones type="button" class="btn btn-primary" (click)="abrirFormulario()">
+      + Nuevo usuario
+    </button>
+  </app-tarjeta>
 
-@if (exito(); as mensaje) {
-  <div class="alert alert-success d-flex justify-content-between align-items-center" role="status">
-    <span>{{ mensaje }}</span>
-    <button type="button" class="btn-close" aria-label="Cerrar" (click)="exito.set(null)"></button>
-  </div>
-}
-
-@if (error(); as mensaje) {
-  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
-}
-
-@if (cargando()) {
-  <p class="text-body-secondary">Cargando…</p>
-} @else if (usuarios().length > 0) {
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
+  <app-tarjeta>
+    <app-tabla
+      titulo="Usuarios del sistema"
+      [columnas]="columnas"
+      [cargando]="cargando()"
+      [error]="error()"
+      [vacia]="datos().length === 0"
+      textoVacio="Todavía no hay usuarios."
+      iconoVacio="bi-people"
+      [meta]="meta()"
+      (cambiarPagina)="cargar($event)"
+      (reintentar)="cargar(1)"
+    >
+      @for (usuario of datos(); track usuario.id) {
         <tr>
-          <th>Nombre</th>
-          <th>Correo</th>
-          <th>Rol</th>
-          <th>Comercio / Zona</th>
-          <th>Estado</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (usuario of usuarios(); track usuario.id) {
-          <tr>
-            <td class="fw-semibold">
-              {{ usuario.nombre }}
-              @if (usuario.id === miId) {
-                <span class="badge text-bg-light border ms-1">Tú</span>
-              }
-            </td>
-            <td>{{ usuario.correo }}</td>
-            <td>{{ nombresRol[usuario.rol] }}</td>
-            <td>{{ usuario.comercio?.nombre ?? usuario.zona?.nombre ?? '—' }}</td>
-            <td>
-              <span class="badge" [class]="usuario.activo ? 'text-bg-success' : 'text-bg-secondary'">
-                {{ usuario.activo ? 'Activo' : 'Inactivo' }}
-              </span>
-            </td>
-            <td class="text-end text-nowrap">
+          <td>
+            {{ usuario.correo }}
+            <div class="small text-body-secondary">{{ usuario.nombre }}</div>
+          </td>
+          <td>
+            {{ nombresRol[usuario.rol] }}
+            @if (usuario.comercio ?? usuario.zona; as asociado) {
+              <div class="small text-body-secondary">{{ asociado.nombre }}</div>
+            }
+          </td>
+          <td><app-badge-estado tipo="activo" [valor]="usuario.activo" /></td>
+          <td>
+            <div class="d-flex flex-wrap gap-2">
               <button
                 type="button"
-                class="btn btn-outline-secondary btn-sm me-1"
+                class="btn btn-outline-secondary btn-sm"
                 (click)="abrirFormulario(usuario)"
               >
                 Editar
               </button>
               <button
                 type="button"
-                class="btn btn-outline-secondary btn-sm me-1"
-                (click)="abrirPassword(usuario)"
-              >
-                Contraseña
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm"
-                [class]="usuario.activo ? 'btn-outline-danger' : 'btn-outline-success'"
-                [disabled]="usuario.id === miId || cambiandoEstado() === usuario.id"
-                [title]="usuario.id === miId ? 'No puedes desactivar tu propio usuario' : ''"
-                (click)="cambiarEstado(usuario)"
+                class="btn btn-outline-secondary btn-sm"
+                [disabled]="cambiandoEstado() === usuario.id"
+                (click)="alternarEstado(usuario)"
               >
                 {{ usuario.activo ? 'Desactivar' : 'Activar' }}
               </button>
-            </td>
-          </tr>
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="abrirPassword(usuario)"
+              >
+                Restablecer contraseña
+              </button>
+            </div>
+          </td>
+        </tr>
+      }
+    </app-tabla>
+
+    @if (aviso(); as texto) {
+      <div class="alert alert-warning d-flex align-items-start gap-2 mt-3 mb-0" role="alert">
+        <span class="flex-grow-1">{{ texto }}</span>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Cerrar aviso"
+          (click)="aviso.set(null)"
+        ></button>
+      </div>
+    }
+  </app-tarjeta>
+
+  @if (formularioAbierto()) {
+    <app-tarjeta [titulo]="editando() ? 'Editar usuario' : 'Nuevo usuario'">
+      <form (ngSubmit)="guardar()">
+        @if (errorFormulario(); as mensaje) {
+          <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
         }
-      </tbody>
-    </table>
-  </div>
 
-  <app-paginacion [meta]="meta()" (cambiar)="cargar($event)" />
-}
+        <div class="row g-3">
+          <app-campo
+            class="col-md-6 col-xl-4 col-xxl"
+            etiqueta="Nombre"
+            para="usuario-nombre"
+            [obligatorio]="true"
+            [errores]="errores()['nombre']"
+          >
+            <input
+              id="usuario-nombre"
+              name="nombre"
+              type="text"
+              class="form-control"
+              maxlength="120"
+              required
+              [class.is-invalid]="errores()['nombre']"
+              [(ngModel)]="formulario.nombre"
+            />
+          </app-campo>
 
-@if (modal() === 'formulario') {
-  <app-modal [titulo]="editando() ? 'Editar usuario' : 'Nuevo usuario'" (cerrar)="cerrarModal()">
-    <form (ngSubmit)="guardar()">
-      @if (errorFormulario(); as mensaje) {
-        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
-      }
+          <app-campo
+            class="col-md-6 col-xl-4 col-xxl"
+            etiqueta="Correo electrónico"
+            para="usuario-correo"
+            [obligatorio]="true"
+            [errores]="errores()['correo']"
+          >
+            <input
+              id="usuario-correo"
+              name="correo"
+              type="email"
+              class="form-control"
+              maxlength="120"
+              autocomplete="off"
+              required
+              [class.is-invalid]="errores()['correo']"
+              [(ngModel)]="formulario.correo"
+            />
+          </app-campo>
 
-      <div class="mb-3">
-        <label for="usuario-nombre" class="form-label">Nombre</label>
-        <input
-          id="usuario-nombre"
-          name="nombre"
-          type="text"
-          class="form-control"
-          maxlength="120"
-          required
-          [class.is-invalid]="errores()['nombre']"
-          [(ngModel)]="formulario.nombre"
-        />
-        <app-error-campo [mensajes]="errores()['nombre']" />
-      </div>
-
-      <div class="mb-3">
-        <label for="usuario-correo" class="form-label">Correo</label>
-        <input
-          id="usuario-correo"
-          name="correo"
-          type="email"
-          class="form-control"
-          maxlength="120"
-          autocomplete="off"
-          required
-          [class.is-invalid]="errores()['correo']"
-          [(ngModel)]="formulario.correo"
-        />
-        <app-error-campo [mensajes]="errores()['correo']" />
-      </div>
-
-      @if (!editando()) {
-        <div class="mb-3">
-          <label for="usuario-password" class="form-label">Contraseña inicial</label>
-          <input
-            id="usuario-password"
-            name="password"
-            type="password"
-            class="form-control"
-            autocomplete="new-password"
-            aria-describedby="usuario-password-ayuda"
-            required
-            [class.is-invalid]="errores()['password']"
-            [(ngModel)]="formulario.password"
-          />
-          <app-error-campo [mensajes]="errores()['password']" />
-          <div id="usuario-password-ayuda" class="form-text">Mínimo 8 caracteres.</div>
-        </div>
-      }
-
-      <div class="mb-3">
-        <label for="usuario-rol" class="form-label">Rol</label>
-        <select
-          id="usuario-rol"
-          name="rol"
-          class="form-select"
-          [class.is-invalid]="errores()['rol']"
-          [disabled]="editando()?.id === miId"
-          [(ngModel)]="formulario.rol"
-        >
-          @for (rol of roles; track rol) {
-            <option [ngValue]="rol">{{ nombresRol[rol] }}</option>
+          @if (!editando()) {
+            <app-campo
+              class="col-md-6 col-xl-4 col-xxl"
+              etiqueta="Contraseña inicial"
+              para="usuario-password"
+              [obligatorio]="true"
+              ayuda="Mínimo 8 caracteres."
+              [errores]="errores()['password']"
+            >
+              <input
+                id="usuario-password"
+                name="password"
+                type="password"
+                class="form-control"
+                autocomplete="new-password"
+                required
+                [class.is-invalid]="errores()['password']"
+                [(ngModel)]="formulario.password"
+              />
+            </app-campo>
           }
-        </select>
-        <app-error-campo [mensajes]="errores()['rol']" />
-        @if (editando()?.id === miId) {
-          <div class="form-text">No puedes cambiar tu propio rol.</div>
-        }
-      </div>
 
-      @if (formulario.rol === 'comercio') {
-        <div class="mb-3">
-          <label for="usuario-comercio" class="form-label">Comercio</label>
-          <select
-            id="usuario-comercio"
-            name="comercio_id"
-            class="form-select"
-            [class.is-invalid]="errores()['comercio_id']"
-            [(ngModel)]="formulario.comercio_id"
+          <app-campo
+            class="col-md-6 col-xl-4 col-xxl"
+            etiqueta="Rol"
+            para="usuario-rol"
+            [obligatorio]="true"
+            [errores]="errores()['rol']"
+            [ayuda]="editando()?.id === miId ? 'No puedes cambiar tu propio rol.' : undefined"
           >
-            <option [ngValue]="null">Elige un comercio…</option>
-            @for (comercio of comercios(); track comercio.id) {
-              <option [ngValue]="comercio.id">{{ comercio.nombre }}</option>
-            }
-          </select>
-          <app-error-campo [mensajes]="errores()['comercio_id']" />
-        </div>
-      }
+            <select
+              id="usuario-rol"
+              name="rol"
+              class="form-select"
+              required
+              [class.is-invalid]="errores()['rol']"
+              [disabled]="editando()?.id === miId"
+              [(ngModel)]="formulario.rol"
+            >
+              @for (rol of roles; track rol) {
+                <option [ngValue]="rol">{{ nombresRol[rol] }}</option>
+              }
+            </select>
+          </app-campo>
 
-      @if (formulario.rol === 'repartidor') {
-        <div class="mb-3">
-          <label for="usuario-zona" class="form-label">Zona</label>
-          <select
-            id="usuario-zona"
-            name="zona_id"
-            class="form-select"
-            [class.is-invalid]="errores()['zona_id']"
-            [(ngModel)]="formulario.zona_id"
-          >
-            <option [ngValue]="null">Elige una zona…</option>
-            @for (zona of zonas(); track zona.id) {
-              <option [ngValue]="zona.id">{{ zona.nombre }}</option>
-            }
-          </select>
-          <app-error-campo [mensajes]="errores()['zona_id']" />
-        </div>
-      }
+          @if (formulario.rol === 'comercio') {
+            <app-campo
+              class="col-md-6 col-xl-4 col-xxl"
+              etiqueta="Comercio"
+              nota="rol comercio"
+              para="usuario-comercio"
+              [obligatorio]="true"
+              [errores]="errores()['comercio_id']"
+            >
+              <select
+                id="usuario-comercio"
+                name="comercio_id"
+                class="form-select"
+                required
+                [class.is-invalid]="errores()['comercio_id']"
+                [(ngModel)]="formulario.comercio_id"
+              >
+                <option [ngValue]="null">Elige un comercio…</option>
+                @for (comercio of comercios(); track comercio.id) {
+                  <option [ngValue]="comercio.id">{{ comercio.nombre }}</option>
+                }
+              </select>
+            </app-campo>
+          }
 
-      <div class="d-flex justify-content-end gap-2 mt-4">
-        <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">
-          Cancelar
-        </button>
-        <button type="submit" class="btn btn-primary" [disabled]="guardando()">
-          {{ guardando() ? 'Guardando…' : 'Guardar' }}
-        </button>
-      </div>
-    </form>
-  </app-modal>
+          @if (formulario.rol === 'repartidor') {
+            <app-campo
+              class="col-md-6 col-xl-4 col-xxl"
+              etiqueta="Zona"
+              nota="rol repartidor"
+              para="usuario-zona"
+              [obligatorio]="true"
+              [errores]="errores()['zona_id']"
+            >
+              <select
+                id="usuario-zona"
+                name="zona_id"
+                class="form-select"
+                required
+                [class.is-invalid]="errores()['zona_id']"
+                [(ngModel)]="formulario.zona_id"
+              >
+                <option [ngValue]="null">Elige una zona…</option>
+                @for (zona of zonas(); track zona.id) {
+                  <option [ngValue]="zona.id">{{ zona.nombre }}</option>
+                }
+              </select>
+            </app-campo>
+          }
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar' }}
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="cerrarFormulario()">
+            Cancelar
+          </button>
+          @if (editando(); as usuario) {
+            <span class="text-body-secondary small">
+              Creado · {{ usuario.created_at | date: 'dd/MM/yyyy HH:mm' }}
+              <span class="mx-1" aria-hidden="true">|</span>
+              Modificado · {{ usuario.updated_at | date: 'dd/MM/yyyy HH:mm' }}
+            </span>
+          }
+        </div>
+      </form>
+    </app-tarjeta>
+  }
+</div>
+
+@if (porDesactivar(); as usuario) {
+  <app-confirmacion
+    titulo="Desactivar usuario"
+    [mensaje]="
+      '¿Desactivar la cuenta ' +
+      usuario.correo +
+      '? No podrá iniciar sesión y sus sesiones abiertas se cerrarán.'
+    "
+    textoConfirmar="Desactivar"
+    [peligro]="true"
+    [procesando]="cambiandoEstado() === usuario.id"
+    (confirmar)="cambiarEstado(usuario)"
+    (cancelar)="porDesactivar.set(null)"
+  />
 }
 
-@if (modal() === 'password') {
-  <app-modal titulo="Restablecer contraseña" (cerrar)="cerrarModal()">
+@if (restableciendo(); as usuario) {
+  <app-modal titulo="Restablecer contraseña" (cerrar)="restableciendo.set(null)">
     <form (ngSubmit)="guardarPassword()">
       @if (errorFormulario(); as mensaje) {
-        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+        <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
       }
 
       <p>
-        Define una contraseña nueva para <strong>{{ editando()?.nombre }}</strong>. Sus sesiones
-        abiertas se cerrarán.
+        Define una contraseña nueva para <strong>{{ usuario.correo }}</strong
+        >. Sus sesiones abiertas se cerrarán.
       </p>
 
-      <div class="mb-4">
-        <label for="password-nueva" class="form-label">Contraseña nueva</label>
+      <app-campo
+        etiqueta="Contraseña nueva"
+        para="password-nueva"
+        [obligatorio]="true"
+        ayuda="Mínimo 8 caracteres."
+        [errores]="errores()['password']"
+      >
         <input
           id="password-nueva"
           name="password"
           type="password"
           class="form-control"
           autocomplete="new-password"
-          aria-describedby="password-nueva-ayuda"
           required
           [class.is-invalid]="errores()['password']"
           [(ngModel)]="passwordNueva"
         />
-        <app-error-campo [mensajes]="errores()['password']" />
-        <div id="password-nueva-ayuda" class="form-text">Mínimo 8 caracteres.</div>
-      </div>
+      </app-campo>
 
-      <div class="d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="restableciendo.set(null)">
           Cancelar
         </button>
         <button type="submit" class="btn btn-primary" [disabled]="guardando()">

@@ -29,6 +29,12 @@ export type Columna = string | { titulo: string; clase?: string };
   selector: 'app-tabla',
   imports: [EstadoVacio, Paginacion],
   host: { class: 'd-block' },
+  styles: `
+    /* Solo desplazamiento horizontal: evita una barra vertical por redondeo de subpíxeles. */
+    .table-responsive {
+      overflow-y: hidden;
+    }
+  `,
   template: `
     <div class="table-responsive">
       <table

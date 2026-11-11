@@ -19,7 +19,7 @@ let contador = 0;
     <section class="card h-100" [attr.aria-labelledby]="titulo() ? idTitulo : null">
       <div class="card-body">
         @if (titulo()) {
-          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+          <div class="encabezado d-flex flex-wrap align-items-center justify-content-between gap-2">
             <h2 class="card-title mb-0" [id]="idTitulo">{{ titulo() }}</h2>
             <div class="d-flex flex-wrap align-items-center gap-2">
               <ng-content select="[acciones]" />
@@ -29,6 +29,12 @@ let contador = 0;
         <ng-content />
       </div>
     </section>
+  `,
+  styles: `
+    /* Una tarjeta con solo título y acciones (INT-02) no deja espacio vacío debajo. */
+    .encabezado:not(:last-child) {
+      margin-bottom: 1rem;
+    }
   `,
 })
 export class Tarjeta {

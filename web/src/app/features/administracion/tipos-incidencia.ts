@@ -2,27 +2,44 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../core/api.service';
-import { ErroresDeCampos, camposDeError, mensajeDeError } from '../../core/etiquetas';
+import {
+  ErroresDeCampos,
+  camposDeError,
+  mensajeDeError,
+  mensajeDeFormulario,
+} from '../../core/etiquetas';
+import { MensajesService } from '../../core/mensajes.service';
 import { Paginado, Respuesta, TipoIncidencia } from '../../core/modelos';
-import { ErrorCampo } from '../../shared/error-campo';
+import { Campo } from '../../shared/campo';
 import { Modal } from '../../shared/modal';
-import { Paginacion } from '../../shared/paginacion';
+import { Columna, Tabla } from '../../shared/tabla';
+import { Tarjeta } from '../../shared/tarjeta';
 
+/**
+ * Bloque "Tipos de incidencia" de Parametrización (INT-03): crear, editar y activar/desactivar
+ * con un interruptor. Un tipo inactivo deja de ofrecerse al reportar incidencias.
+ */
 @Component({
   selector: 'app-tipos-incidencia',
-  imports: [FormsModule, Paginacion, Modal, ErrorCampo],
+  imports: [FormsModule, Tarjeta, Tabla, Campo, Modal],
   templateUrl: './tipos-incidencia.html',
 })
 export class TiposIncidencia implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly mensajes = inject(MensajesService);
+
+  protected readonly columnas: Columna[] = [
+    'Tipo',
+    'Activo',
+    { titulo: 'Acciones', clase: 'text-end' },
+  ];
 
   // Lista
-  protected readonly tipos = signal<TipoIncidencia[]>([]);
+  protected readonly datos = signal<TipoIncidencia[]>([]);
   protected readonly meta = signal<Paginado<TipoIncidencia>['meta'] | null>(null);
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly exito = signal<string | null>(null);
-  /** Id del tipo al que se le está cambiando el estado (para deshabilitar su botón). */
+  /** Id del tipo al que se le está cambiando el estado (para deshabilitar su interruptor). */
   protected readonly cambiandoEstado = signal<number | null>(null);
 
   // Formulario (modal)
@@ -43,7 +60,7 @@ export class TiposIncidencia implements OnInit {
 
     this.api.get<Paginado<TipoIncidencia>>('/tipos-incidencia', { page: pagina }).subscribe({
       next: (respuesta) => {
-        this.tipos.set(respuesta.data);
+        this.datos.set(respuesta.data);
         this.meta.set(respuesta.meta);
         this.cargando.set(false);
       },
@@ -80,23 +97,21 @@ export class TiposIncidencia implements OnInit {
       next: (respuesta) => {
         this.guardando.set(false);
         this.modalAbierto.set(false);
-        this.exito.set(
-          `El tipo "${respuesta.data.nombre}" se ${tipo ? 'actualizó' : 'creó'} correctamente.`,
+        this.mensajes.exito(
+          `Tipo ${respuesta.data.nombre} ${tipo ? 'actualizado' : 'creado'} correctamente.`,
         );
         this.cargar(tipo ? (this.meta()?.current_page ?? 1) : 1);
       },
       error: (error: unknown) => {
         this.guardando.set(false);
-        this.errorFormulario.set(mensajeDeError(error));
+        this.errorFormulario.set(mensajeDeFormulario(error));
         this.errores.set(camposDeError(error));
       },
     });
   }
 
-  protected cambiarEstado(tipo: TipoIncidencia): void {
+  protected cambiarEstado(tipo: TipoIncidencia, interruptor: HTMLInputElement): void {
     this.cambiandoEstado.set(tipo.id);
-    this.error.set(null);
-    this.exito.set(null);
 
     this.api
       .put<Respuesta<TipoIncidencia>>(`/tipos-incidencia/${tipo.id}/estado`, {
@@ -107,14 +122,17 @@ export class TiposIncidencia implements OnInit {
           const actualizado = respuesta.data;
 
           this.cambiandoEstado.set(null);
-          this.tipos.update((tipos) => tipos.map((t) => (t.id === actualizado.id ? actualizado : t)));
-          this.exito.set(
-            `El tipo "${actualizado.nombre}" quedó ${actualizado.activo ? 'activo' : 'inactivo'}.`,
+          this.datos.update((tipos) =>
+            tipos.map((t) => (t.id === actualizado.id ? actualizado : t)),
+          );
+          this.mensajes.exito(
+            `Tipo ${actualizado.nombre} ${actualizado.activo ? 'activado' : 'desactivado'}.`,
           );
         },
         error: (error: unknown) => {
           this.cambiandoEstado.set(null);
-          this.error.set(mensajeDeError(error));
+          interruptor.checked = tipo.activo; // vuelve a su posición: el tipo no cambió
+          this.mensajes.error(mensajeDeError(error));
         },
       });
   }

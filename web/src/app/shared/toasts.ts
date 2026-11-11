@@ -35,7 +35,7 @@ import { MensajesService, TipoMensaje } from '../core/mensajes.service';
   styles: `
     .toasts {
       position: fixed;
-      top: 1rem;
+      top: 5rem; /* debajo de la barra superior */
       right: 1rem;
       z-index: 1090;
       display: grid;

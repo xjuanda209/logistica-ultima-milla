@@ -53,7 +53,7 @@ class GuardarUsuarioRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'correo.unique' => 'Ya existe un usuario con ese correo.',
+            'correo.unique' => 'El correo ya existe.',
             'comercio_id.required_if' => 'Elige el comercio al que pertenece el usuario.',
             'zona_id.required_if' => 'Elige la zona que cubre el repartidor.',
         ];

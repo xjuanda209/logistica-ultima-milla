@@ -3,13 +3,7 @@
 export type Rol = 'administrador' | 'operador' | 'comercio' | 'repartidor';
 
 export type EstadoPedido =
-  | 'creado'
-  | 'asignado'
-  | 'recogido'
-  | 'en_ruta'
-  | 'entregado'
-  | 'no_entregado'
-  | 'cancelado';
+  'creado' | 'asignado' | 'recogido' | 'en_ruta' | 'entregado' | 'no_entregado' | 'cancelado';
 
 export type Prioridad = 'baja' | 'media' | 'alta';
 
@@ -30,6 +24,8 @@ export interface Usuario {
   comercio_id: number | null;
   zona_id: number | null;
   disponibilidad: 'disponible' | 'no_disponible' | null;
+  created_at: string;
+  updated_at: string;
   comercio?: Referencia | null;
   zona?: Referencia | null;
 }
@@ -38,6 +34,8 @@ export interface Zona {
   id: number;
   nombre: string;
   descripcion: string | null;
+  /** Solo con GET /zonas?con_repartidores=1 (administrador y operador). */
+  repartidores?: Referencia[];
 }
 
 export interface Comercio {

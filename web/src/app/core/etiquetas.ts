@@ -127,3 +127,11 @@ export function camposDeError(error: unknown): ErroresDeCampos {
 
   return {};
 }
+
+/**
+ * Mensaje general de un formulario que falló (va arriba del formulario). Si la API devolvió
+ * errores por campo, no hace falta: cada error ya aparece debajo de su campo.
+ */
+export function mensajeDeFormulario(error: unknown): string | null {
+  return Object.keys(camposDeError(error)).length > 0 ? null : mensajeDeError(error);
+}
