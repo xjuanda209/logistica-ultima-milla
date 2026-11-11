@@ -12,6 +12,9 @@
           }
         </select>
       </div>
+      @if (puedeCrear) {
+        <a class="btn btn-acento ms-auto" routerLink="/pedidos/nuevo">+ Nuevo pedido</a>
+      }
     </div>
   </app-tarjeta>
 

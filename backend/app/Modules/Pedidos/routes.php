@@ -15,6 +15,8 @@ Route::middleware('rol:administrador,operador,comercio,repartidor')->group(funct
 });
 
 Route::middleware('rol:administrador,operador,comercio')->group(function (): void {
+    Route::post('/pedidos', [PedidoController::class, 'store']);
+
     Route::get('/clientes', [ClienteController::class, 'index']);
     Route::post('/clientes', [ClienteController::class, 'store']);
     Route::put('/clientes/{id}', [ClienteController::class, 'update'])->whereNumber('id');

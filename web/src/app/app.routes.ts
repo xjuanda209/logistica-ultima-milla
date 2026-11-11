@@ -58,6 +58,15 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pedidos/pedidos-lista').then((m) => m.PedidosLista),
       },
       {
+        // Antes de 'pedidos/:id' para que "nuevo" no se tome como un id. El repartidor no crea pedidos.
+        path: 'pedidos/nuevo',
+        title: 'Nuevo pedido',
+        canActivate: [rolGuard],
+        data: { roles: rolesDe('/clientes') },
+        loadComponent: () =>
+          import('./features/pedidos/pedido-formulario').then((m) => m.PedidoFormulario),
+      },
+      {
         path: 'pedidos/:id',
         title: 'Detalle del pedido',
         canActivate: [rolGuard],

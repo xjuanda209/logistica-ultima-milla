@@ -64,6 +64,18 @@ class Pedido extends Model
     }
 
     /**
+     * Número del próximo pedido, con el formato P-000001: el consecutivo más alto que exista más uno.
+     * El número es único en la base: si dos personas crean un pedido a la vez, quien lo use de
+     * segundo recibe un error de duplicado y debe pedir otro (ver PedidoController::store).
+     */
+    public static function siguienteNumero(): string
+    {
+        $ultimo = self::query()->where('numero', 'like', 'P-______')->max('numero');
+
+        return sprintf('P-%06d', (int) substr((string) $ultimo, 2) + 1);
+    }
+
+    /**
      * @return BelongsTo<Comercio, $this>
      */
     public function comercio(): BelongsTo

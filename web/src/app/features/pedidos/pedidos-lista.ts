@@ -3,6 +3,7 @@ import { Component, effect, inject, input, signal, untracked } from '@angular/co
 import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { ESTADOS_PEDIDO, mensajeDeError } from '../../core/etiquetas';
 import { EstadoPedido, Paginado, Pedido } from '../../core/modelos';
 import { BadgeEstado } from '../../shared/badge-estado';
@@ -17,6 +18,13 @@ import { Tarjeta } from '../../shared/tarjeta';
 export class PedidosLista {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+
+  /** El repartidor solo consulta: no crea pedidos. */
+  protected readonly puedeCrear = inject(AuthService).tieneRol(
+    'administrador',
+    'operador',
+    'comercio',
+  );
 
   /** Filtro que llega por la URL: /pedidos?estado=en_ruta */
   readonly estado = input<EstadoPedido | undefined>();

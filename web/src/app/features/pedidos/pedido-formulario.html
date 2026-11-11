@@ -1,0 +1,350 @@
+@if (cargando()) {
+  <p class="text-body-secondary">Cargando…</p>
+} @else if (error(); as mensaje) {
+  <app-tarjeta>
+    <app-estado-vacio
+      tono="error"
+      icono="bi-exclamation-octagon"
+      titulo="No se pudo cargar el pedido"
+      [texto]="mensaje"
+    >
+      <a class="btn btn-outline-secondary" routerLink="/pedidos">Volver a pedidos</a>
+    </app-estado-vacio>
+  </app-tarjeta>
+} @else if (pedido() && pedido()?.estado !== 'creado') {
+  <app-tarjeta>
+    <app-estado-vacio
+      icono="bi-lock"
+      [titulo]="'El pedido ' + pedido()?.numero + ' ya no se puede editar'"
+      texto="Un pedido solo puede editarse mientras está en estado «Creado»."
+    >
+      <a class="btn btn-outline-secondary" [routerLink]="['/pedidos', pedido()?.id]">
+        Volver al detalle
+      </a>
+    </app-estado-vacio>
+  </app-tarjeta>
+} @else {
+  @if (pedido(); as p) {
+    <div class="alert alert-warning" role="status">
+      Editando el pedido <strong>{{ p.numero }}</strong
+      >. Solo puede editarse mientras está en estado «Creado».
+    </div>
+  }
+
+  <form (ngSubmit)="guardar()">
+    @if (errorFormulario(); as mensaje) {
+      <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+    }
+
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-7 d-grid gap-4">
+        <app-tarjeta titulo="Cliente y entrega">
+          <div class="row g-3">
+            <app-campo
+              class="col-md-6"
+              etiqueta="Comercio"
+              para="pedido-comercio"
+              [obligatorio]="!comercioFijo && !esEdicion()"
+              [errores]="errores()['comercio_id']"
+            >
+              @if (comercioFijo || esEdicion()) {
+                <div class="input-group">
+                  <input
+                    id="pedido-comercio"
+                    type="text"
+                    class="form-control"
+                    [value]="nombreComercio()"
+                    readonly
+                    disabled
+                  />
+                  <span class="input-group-text">
+                    <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                  </span>
+                </div>
+              } @else {
+                <select
+                  id="pedido-comercio"
+                  name="comercio_id"
+                  class="form-select"
+                  required
+                  [class.is-invalid]="errores()['comercio_id']"
+                  [ngModel]="formulario.comercio_id"
+                  (ngModelChange)="cambiarComercio($event)"
+                >
+                  <option [ngValue]="null">Elige el comercio…</option>
+                  @for (comercio of comercios(); track comercio.id) {
+                    <option [ngValue]="comercio.id">{{ comercio.nombre }}</option>
+                  }
+                </select>
+              }
+            </app-campo>
+
+            <app-campo
+              class="col-md-6"
+              etiqueta="Cliente"
+              para="pedido-cliente"
+              [obligatorio]="!esEdicion()"
+              [errores]="errores()['cliente_id']"
+            >
+              @if (pedido(); as p) {
+                <div class="input-group">
+                  <input
+                    id="pedido-cliente"
+                    type="text"
+                    class="form-control"
+                    [value]="p.cliente?.nombre"
+                    readonly
+                    disabled
+                  />
+                  <span class="input-group-text">
+                    <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                  </span>
+                </div>
+              } @else {
+                <select
+                  id="pedido-cliente"
+                  name="cliente_id"
+                  class="form-select"
+                  required
+                  [disabled]="formulario.comercio_id === null || cargandoClientes()"
+                  [class.is-invalid]="errores()['cliente_id']"
+                  [(ngModel)]="formulario.cliente_id"
+                >
+                  <option [ngValue]="null">
+                    {{
+                      cargandoClientes()
+                        ? 'Cargando clientes…'
+                        : formulario.comercio_id === null
+                          ? 'Primero elige el comercio'
+                          : 'Elige el cliente…'
+                    }}
+                  </option>
+                  @for (cliente of clientes(); track cliente.id) {
+                    <option [ngValue]="cliente.id">
+                      {{ cliente.nombre }} · CC {{ cliente.cedula }}
+                    </option>
+                  }
+                </select>
+              }
+            </app-campo>
+
+            @if (!esEdicion()) {
+              <div class="col-12 text-md-end mt-2">
+                <button
+                  type="button"
+                  class="btn btn-link p-0"
+                  [disabled]="formulario.comercio_id === null"
+                  (click)="registrarCliente()"
+                >
+                  + Registrar cliente nuevo
+                </button>
+              </div>
+            }
+
+            <div class="col-12">
+              <span class="form-label d-block">Dirección de entrega</span>
+              @if (pedido(); as p) {
+                <div class="border rounded bg-body-tertiary px-3 py-2">
+                  <div>{{ p.direccion }} · {{ p.barrio }}</div>
+                  <div class="small text-body-secondary">
+                    Zona {{ p.zona?.nombre }}
+                    @if (p.indicaciones) {
+                      · {{ p.indicaciones }}
+                    }
+                  </div>
+                </div>
+                <div class="form-text">
+                  Es la dirección que tenía el cliente cuando se creó el pedido.
+                </div>
+              } @else if (clienteElegido(); as cliente) {
+                <div class="border rounded bg-body-tertiary px-3 py-2">
+                  <div>{{ cliente.direccion }} · {{ cliente.barrio }}</div>
+                  <div class="small text-body-secondary">
+                    Zona {{ cliente.zona?.nombre }}
+                    @if (cliente.indicaciones) {
+                      · {{ cliente.indicaciones }}
+                    }
+                  </div>
+                </div>
+                <div class="form-text">
+                  Se copia al pedido al guardarlo. Para cambiarla, edita el cliente en Clientes.
+                </div>
+              } @else {
+                <div class="border rounded bg-body-tertiary px-3 py-2 text-body-secondary">
+                  Elige un cliente para ver su dirección.
+                </div>
+              }
+            </div>
+          </div>
+        </app-tarjeta>
+
+        <app-tarjeta titulo="Productos">
+          <button acciones type="button" class="btn btn-outline-secondary" (click)="agregarLinea()">
+            + Agregar producto
+          </button>
+
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <caption class="visually-hidden">
+                Productos del pedido
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col" class="col-3">Cantidad</th>
+                  <th scope="col"><span class="visually-hidden">Quitar</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (linea of formulario.lineas; track $index; let i = $index) {
+                  <tr>
+                    <td class="align-top">
+                      <input
+                        type="text"
+                        class="form-control"
+                        maxlength="120"
+                        required
+                        [attr.aria-label]="'Producto ' + (i + 1)"
+                        [class.is-invalid]="errores()['lineas.' + i + '.producto']"
+                        [ngModelOptions]="{ standalone: true }"
+                        [(ngModel)]="linea.producto"
+                      />
+                      <app-error-campo [mensajes]="errores()['lineas.' + i + '.producto']" />
+                    </td>
+                    <td class="align-top">
+                      <input
+                        type="number"
+                        class="form-control"
+                        min="1"
+                        step="1"
+                        required
+                        [attr.aria-label]="'Cantidad del producto ' + (i + 1)"
+                        [class.is-invalid]="errores()['lineas.' + i + '.cantidad']"
+                        [ngModelOptions]="{ standalone: true }"
+                        [(ngModel)]="linea.cantidad"
+                      />
+                      <app-error-campo [mensajes]="errores()['lineas.' + i + '.cantidad']" />
+                    </td>
+                    <td class="align-top text-end">
+                      <button
+                        type="button"
+                        class="btn btn-link text-body-secondary px-2"
+                        [attr.aria-label]="'Quitar el producto ' + (i + 1)"
+                        title="Quitar"
+                        (click)="quitarLinea(i)"
+                      >
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="text-body-secondary text-center py-4">
+                      El pedido no tiene productos. Agrega al menos uno.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <app-error-campo [mensajes]="errores()['lineas']" />
+        </app-tarjeta>
+      </div>
+
+      <div class="col-lg-5">
+        <app-tarjeta titulo="Condiciones de entrega">
+          <app-campo
+            class="mb-3"
+            etiqueta="Prioridad"
+            para="pedido-prioridad"
+            [obligatorio]="true"
+            [errores]="errores()['prioridad']"
+          >
+            <select
+              id="pedido-prioridad"
+              name="prioridad"
+              class="form-select"
+              required
+              [class.is-invalid]="errores()['prioridad']"
+              [(ngModel)]="formulario.prioridad"
+            >
+              @for (prioridad of listaPrioridades; track prioridad) {
+                <option [ngValue]="prioridad">{{ prioridades[prioridad].texto }}</option>
+              }
+            </select>
+          </app-campo>
+
+          <fieldset class="mb-3">
+            <legend class="form-label fs-6">
+              Franja de entrega <span aria-hidden="true">*</span>
+            </legend>
+
+            <div class="input-group">
+              <label class="input-group-text" for="pedido-franja-inicio">Desde</label>
+              <input
+                id="pedido-franja-inicio"
+                name="franja_inicio"
+                type="datetime-local"
+                class="form-control"
+                required
+                [class.is-invalid]="errores()['franja_inicio']"
+                [(ngModel)]="formulario.franja_inicio"
+              />
+            </div>
+            <app-error-campo [mensajes]="errores()['franja_inicio']" />
+
+            <div class="input-group mt-2">
+              <label class="input-group-text" for="pedido-franja-fin">Hasta</label>
+              <input
+                id="pedido-franja-fin"
+                name="franja_fin"
+                type="datetime-local"
+                class="form-control"
+                required
+                [class.is-invalid]="errores()['franja_fin']"
+                [(ngModel)]="formulario.franja_fin"
+              />
+            </div>
+            <app-error-campo [mensajes]="errores()['franja_fin']" />
+          </fieldset>
+
+          <app-campo
+            etiqueta="Observaciones"
+            nota="opcional"
+            para="pedido-observaciones"
+            [errores]="errores()['observaciones']"
+          >
+            <textarea
+              id="pedido-observaciones"
+              name="observaciones"
+              class="form-control"
+              rows="3"
+              maxlength="500"
+              [class.is-invalid]="errores()['observaciones']"
+              [(ngModel)]="formulario.observaciones"
+            ></textarea>
+          </app-campo>
+
+          <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Guardar pedido' }}
+            </button>
+            <a
+              class="btn btn-outline-secondary"
+              [routerLink]="pedido() ? ['/pedidos', pedido()?.id] : ['/pedidos']"
+            >
+              Cancelar
+            </a>
+          </div>
+
+          @if (!esEdicion()) {
+            <p class="text-body-secondary small mt-3 mb-0">
+              El número del pedido lo asigna el sistema al guardar. Después solo podrá editarse
+              mientras esté en estado «Creado».
+            </p>
+          }
+        </app-tarjeta>
+      </div>
+    </div>
+  </form>
+}
