@@ -6,6 +6,12 @@ body {
   font-feature-settings: 'cv11'; // variante de Inter: "1" con base recta
 }
 
+// Una tabla ancha dentro de una rejilla .d-grid se desplaza dentro de su tarjeta (.table-responsive)
+// en vez de ensanchar toda la página.
+.d-grid > * {
+  min-width: 0;
+}
+
 // Las cifras de tablas e indicadores se alinean en columnas.
 .table,
 .cifra {

@@ -10,6 +10,7 @@ $escritorio: 992px;
   flex-direction: column;
   min-width: 0;
   min-height: 100vh;
+  background: tema.$fondo-pagina; // gris de la página; tarjetas, tablas y campos quedan blancos
 }
 
 .marco__contenido {

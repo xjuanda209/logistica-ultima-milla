@@ -29,7 +29,7 @@
     >
       @for (pedido of pedidos(); track pedido.id) {
         <tr>
-          <td class="fw-semibold">{{ pedido.numero }}</td>
+          <td class="fw-semibold text-nowrap">{{ pedido.numero }}</td>
           <td>{{ pedido.cliente?.nombre }}</td>
           <td>{{ pedido.comercio?.nombre }}</td>
           <td>{{ pedido.zona?.nombre }}</td>

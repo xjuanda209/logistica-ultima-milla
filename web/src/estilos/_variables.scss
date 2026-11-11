@@ -79,9 +79,20 @@ $h5-font-size: 0.875rem;
 $h6-font-size: 0.8125rem;
 $small-font-size: 0.8125rem;
 $font-weight-semibold: 600;
+// Escala de las utilidades .fs-1 … .fs-6 (independiente de los encabezados, que son más pequeños).
+$font-sizes: (
+  1: 2.25rem,
+  2: 1.75rem,
+  3: 1.5rem,
+  4: 1.25rem,
+  5: 1.0625rem,
+  6: 0.9375rem,
+);
 
 // ── Superficies ──────────────────────────────────────────────────────────────
-$body-bg: $fondo-pagina;
+// Bootstrap usa el fondo del body para tarjetas, campos, tablas, modales y menús: queda blanco.
+// El gris de la página (#F3F6F7) lo pone el marco de la aplicación (layout.scss).
+$body-bg: $white;
 $body-color: $gray-900;
 $body-secondary-color: $gray-600;
 $border-color: $gray-300;

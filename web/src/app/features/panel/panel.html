@@ -60,7 +60,7 @@
   </app-tarjeta>
 
   <div class="row g-4">
-    <div class="col-xl-8 d-grid gap-4 align-content-start">
+    <div class="col-xxl-8 d-grid gap-4 align-content-start">
       <app-tarjeta titulo="Pedidos por estado">
         <ul class="list-unstyled d-flex flex-wrap justify-content-between gap-3 mb-0">
           @for (estado of estados; track estado) {
@@ -118,16 +118,19 @@
       </app-tarjeta>
     </div>
 
-    <div class="col-xl-4 d-grid gap-4 align-content-start">
-      <app-tarjeta titulo="Incidencias por tipo">
-        <app-barras [datos]="incidenciasPorTipo()" />
-      </app-tarjeta>
-      <app-tarjeta titulo="Incidencias por zona">
-        <app-barras [datos]="incidenciasPorZona()" />
-      </app-tarjeta>
-      <app-tarjeta titulo="Incidencias por repartidor">
-        <app-barras [datos]="incidenciasPorRepartidor()" />
-      </app-tarjeta>
+    <!-- En pantallas muy anchas va a la derecha (como el mockup); en las demás, debajo en tres columnas. -->
+    <div class="col-xxl-4">
+      <div class="row g-4">
+        <app-tarjeta class="col-lg-4 col-xxl-12" titulo="Incidencias por tipo">
+          <app-barras [datos]="incidenciasPorTipo()" />
+        </app-tarjeta>
+        <app-tarjeta class="col-lg-4 col-xxl-12" titulo="Incidencias por zona">
+          <app-barras [datos]="incidenciasPorZona()" />
+        </app-tarjeta>
+        <app-tarjeta class="col-lg-4 col-xxl-12" titulo="Incidencias por repartidor">
+          <app-barras [datos]="incidenciasPorRepartidor()" />
+        </app-tarjeta>
+      </div>
     </div>
   </div>
 </div>
