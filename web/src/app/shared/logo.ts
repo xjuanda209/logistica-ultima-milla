@@ -1,35 +1,32 @@
 import { Component, input } from '@angular/core';
 
 /**
- * Isotipo de Última Milla: una ruta punteada que termina en el punto de entrega.
- *   <app-logo />            32 px
- *   <app-logo [tamano]="44" />
+ * Logotipo de texto: "Última" + "Milla" en naranja (docs/interfaces/README.md).
+ *   <app-logo />                 sobre fondo claro: "Última" oscuro (login)
+ *   <app-logo [claro]="true" />  sobre fondo oscuro: "Última" blanco (barra lateral)
  */
 @Component({
   selector: 'app-logo',
-  template: `
-    <svg
-      [attr.width]="tamano()"
-      [attr.height]="tamano()"
-      viewBox="0 0 32 32"
-      fill="none"
-      aria-hidden="true"
-      class="d-block"
-    >
-      <rect width="32" height="32" rx="8" fill="var(--bs-acento)" />
-      <circle cx="10" cy="23" r="2" fill="#fff" />
-      <path
-        d="M10 23c0-7 12-3.5 12-11"
-        stroke="#fff"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-dasharray="0.1 4"
-      />
-      <circle cx="22" cy="10" r="4" fill="#fff" />
-      <circle cx="22" cy="10" r="1.6" fill="var(--bs-acento)" />
-    </svg>
+  template: `<span class="logo" [class.logo--claro]="claro()">Última<span class="logo__milla">Milla</span></span>`,
+  styles: `
+    @use '../../estilos/variables' as tema;
+
+    .logo {
+      color: tema.$lateral-fondo;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .logo--claro {
+      color: tema.$white;
+    }
+
+    .logo__milla {
+      color: tema.$naranja;
+    }
   `,
 })
 export class Logo {
-  readonly tamano = input(32);
+  readonly claro = input(false);
 }

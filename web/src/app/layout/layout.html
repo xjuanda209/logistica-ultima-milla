@@ -1,102 +1,50 @@
-<div class="marco" [class.marco--plegado]="plegado()">
-  <aside class="lateral" [class.lateral--abierto]="menuMovil()" aria-label="Menú principal">
-    <a class="lateral__marca" routerLink="/" (click)="menuMovil.set(false)">
-      <app-logo />
-      <span class="lateral__texto">Última Milla</span>
-    </a>
+<aside class="lateral" [class.lateral--abierto]="menuMovil()" aria-label="Menú principal">
+  <a class="lateral__marca" routerLink="/" (click)="menuMovil.set(false)">
+    <app-logo [claro]="true" />
+  </a>
 
-    <nav class="lateral__nav">
-      @for (opcion of opciones(); track opcion.ruta) {
-        <a
-          class="lateral__enlace"
-          [routerLink]="opcion.ruta"
-          routerLinkActive="lateral__enlace--activo"
-          [attr.title]="plegado() ? opcion.titulo : null"
-          (click)="menuMovil.set(false)"
-        >
-          <i class="bi" [class]="opcion.icono" aria-hidden="true"></i>
-          <span class="lateral__texto">{{ opcion.titulo }}</span>
-        </a>
-      }
-    </nav>
-
-    <div class="lateral__usuario" [attr.title]="plegado() ? usuario()?.nombre : null">
-      <span class="avatar avatar--claro" aria-hidden="true">{{ iniciales() }}</span>
-      <span class="lateral__texto lh-sm text-truncate">
-        <span class="d-block fw-semibold text-white text-truncate">{{ usuario()?.nombre }}</span>
-        <span class="d-block small text-truncate">
-          {{ nombreRol() }}
-          @if (usuario()?.comercio; as comercio) {
-            de {{ comercio.nombre }}
-          }
-        </span>
-      </span>
-    </div>
-  </aside>
-
-  @if (menuMovil()) {
-    <div class="lateral__fondo" (click)="menuMovil.set(false)"></div>
-  }
-
-  <div class="marco__principal">
-    <header class="superior">
-      <button
-        type="button"
-        class="btn btn-light border-0 px-2"
-        aria-label="Mostrar u ocultar el menú"
-        (click)="alternarMenu()"
+  <nav class="lateral__nav">
+    @for (opcion of opciones(); track opcion.ruta) {
+      <a
+        class="lateral__enlace"
+        [routerLink]="opcion.ruta"
+        routerLinkActive="lateral__enlace--activo"
+        ariaCurrentWhenActive="page"
+        (click)="menuMovil.set(false)"
       >
-        <i class="bi bi-layout-sidebar fs-5 d-block" aria-hidden="true"></i>
+        {{ opcion.titulo }}
+      </a>
+    }
+  </nav>
+</aside>
+
+@if (menuMovil()) {
+  <div class="lateral__fondo" (click)="menuMovil.set(false)"></div>
+}
+
+<div class="marco">
+  <header class="superior">
+    <button
+      type="button"
+      class="btn btn-outline-secondary superior__menu px-2 py-1"
+      aria-label="Abrir el menú"
+      (click)="menuMovil.set(true)"
+    >
+      <i class="bi bi-list fs-4 d-block" aria-hidden="true"></i>
+    </button>
+
+    <h1 class="superior__titulo">{{ titulo() }}</h1>
+
+    <div class="superior__usuario">
+      <span class="text-body-secondary text-truncate d-none d-md-inline">{{ usuario()?.correo }}</span>
+      <span class="badge bg-primary-subtle text-primary-emphasis">{{ nombreRol() }}</span>
+      <button type="button" class="btn btn-outline-secondary text-nowrap" (click)="cerrarSesion()">
+        Cerrar sesión
       </button>
+    </div>
+  </header>
 
-      <form class="superior__buscador" role="search" (ngSubmit)="buscarPedido()">
-        <div class="input-group">
-          <span class="input-group-text bg-white border-end-0 text-body-secondary pe-1">
-            <i class="bi bi-search" aria-hidden="true"></i>
-          </span>
-          <input
-            #buscador
-            name="busqueda"
-            type="search"
-            class="form-control border-start-0"
-            placeholder="Buscar pedido por número"
-            aria-label="Buscar pedido por número"
-            maxlength="20"
-            autocomplete="off"
-            [(ngModel)]="busqueda"
-          />
-        </div>
-      </form>
-
-      <div class="dropdown ms-auto">
-        <button
-          type="button"
-          class="btn btn-light border-0 d-flex align-items-center gap-2 px-2"
-          aria-haspopup="true"
-          [attr.aria-expanded]="menuUsuario()"
-          (click)="alternarMenuUsuario($event)"
-        >
-          <span class="avatar" aria-hidden="true">{{ iniciales() }}</span>
-          <span class="d-none d-sm-inline fw-medium">{{ usuario()?.nombre }}</span>
-          <i class="bi bi-chevron-down small text-body-secondary" aria-hidden="true"></i>
-        </button>
-
-        <div class="dropdown-menu dropdown-menu-end mt-1" [class.show]="menuUsuario()">
-          <div class="px-3 py-2">
-            <div class="fw-semibold text-body-emphasis">{{ usuario()?.nombre }}</div>
-            <div class="small text-body-secondary">{{ usuario()?.correo }}</div>
-            <span class="badge text-bg-light border mt-2">{{ nombreRol() }}</span>
-          </div>
-          <div class="dropdown-divider"></div>
-          <button type="button" class="dropdown-item" (click)="cerrarSesion()">
-            <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Cerrar sesión
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <main class="marco__contenido">
-      <router-outlet />
-    </main>
-  </div>
+  <main class="marco__contenido">
+    <router-outlet />
+  </main>
 </div>

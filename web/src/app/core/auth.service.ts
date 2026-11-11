@@ -53,9 +53,13 @@ export class AuthService {
     return usuario !== null && roles.includes(usuario.rol);
   }
 
-  /** Primera pantalla que ve cada rol después de entrar. */
+  /**
+   * Primera pantalla que ve cada rol después de entrar (docs/interfaces/README.md):
+   * administrador y operador → Panel; comercio → Pedidos. El repartidor trabaja en la app móvil
+   * ("Mis pedidos"); si entra a la web, ve sus pedidos.
+   */
   rutaInicial(): string {
-    return this.tieneRol('repartidor') ? '/pedidos' : '/panel';
+    return this.tieneRol('administrador', 'operador') ? '/panel' : '/pedidos';
   }
 }
 

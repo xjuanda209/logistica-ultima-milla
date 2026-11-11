@@ -6,7 +6,7 @@
   <div class="alert alert-danger mt-3" role="alert">{{ mensaje }}</div>
 } @else if (pedido(); as p) {
   <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-4">
-    <h1 class="h3 mb-0">Pedido {{ p.numero }}</h1>
+    <h2 class="h1 mb-0">Pedido {{ p.numero }}</h2>
     <span class="badge" [class]="estados[p.estado].clase">{{ estados[p.estado].texto }}</span>
     <span class="badge" [class]="prioridades[p.prioridad].clase">
       Prioridad {{ prioridades[p.prioridad].texto }}
