@@ -3,13 +3,15 @@ import { Component, effect, inject, input, signal, untracked } from '@angular/co
 import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
-import { ESTADOS_PEDIDO, PRIORIDADES, mensajeDeError } from '../../core/etiquetas';
+import { ESTADOS_PEDIDO, mensajeDeError } from '../../core/etiquetas';
 import { EstadoPedido, Paginado, Pedido } from '../../core/modelos';
-import { Paginacion } from '../../shared/paginacion';
+import { BadgeEstado } from '../../shared/badge-estado';
+import { Columna, Tabla } from '../../shared/tabla';
+import { Tarjeta } from '../../shared/tarjeta';
 
 @Component({
   selector: 'app-pedidos-lista',
-  imports: [DatePipe, RouterLink, Paginacion],
+  imports: [DatePipe, RouterLink, Tarjeta, Tabla, BadgeEstado],
   templateUrl: './pedidos-lista.html',
 })
 export class PedidosLista {
@@ -20,8 +22,18 @@ export class PedidosLista {
   readonly estado = input<EstadoPedido | undefined>();
 
   protected readonly estados = ESTADOS_PEDIDO;
-  protected readonly prioridades = PRIORIDADES;
   protected readonly listaEstados = Object.keys(ESTADOS_PEDIDO) as EstadoPedido[];
+  protected readonly columnas: Columna[] = [
+    'Número',
+    'Cliente',
+    'Comercio',
+    'Zona',
+    'Franja de entrega',
+    'Prioridad',
+    'Estado',
+    'Repartidor',
+    { titulo: 'Acciones', clase: 'text-end' },
+  ];
 
   protected readonly pedidos = signal<Pedido[]>([]);
   protected readonly meta = signal<Paginado<Pedido>['meta'] | null>(null);

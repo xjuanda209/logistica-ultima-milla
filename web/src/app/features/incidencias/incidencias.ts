@@ -3,19 +3,19 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
-import { ESTADOS_INCIDENCIA, mensajeDeError } from '../../core/etiquetas';
+import { mensajeDeError } from '../../core/etiquetas';
 import { Incidencia, Paginado } from '../../core/modelos';
-import { Paginacion } from '../../shared/paginacion';
+import { BadgeEstado } from '../../shared/badge-estado';
+import { Tabla } from '../../shared/tabla';
+import { Tarjeta } from '../../shared/tarjeta';
 
 @Component({
   selector: 'app-incidencias',
-  imports: [DatePipe, RouterLink, Paginacion],
+  imports: [DatePipe, RouterLink, Tarjeta, Tabla, BadgeEstado],
   templateUrl: './incidencias.html',
 })
 export class Incidencias implements OnInit {
   private readonly api = inject(ApiService);
-
-  protected readonly estados = ESTADOS_INCIDENCIA;
 
   protected readonly incidencias = signal<Incidencia[]>([]);
   protected readonly meta = signal<Paginado<Incidencia>['meta'] | null>(null);

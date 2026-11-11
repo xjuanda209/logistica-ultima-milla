@@ -21,7 +21,7 @@
           [queryParams]="{ estado: tarjeta.estado }"
         >
           <div class="card-body">
-            <span class="badge mb-2" [class]="tarjeta.clase">{{ tarjeta.texto }}</span>
+            <app-badge-estado class="d-block mb-2" [valor]="tarjeta.estado" />
             <div class="display-6 fw-semibold">{{ tarjeta.cantidad }}</div>
           </div>
         </a>

@@ -7,7 +7,9 @@ import { Component, input } from '@angular/core';
  */
 @Component({
   selector: 'app-logo',
-  template: `<span class="logo" [class.logo--claro]="claro()">Última<span class="logo__milla">Milla</span></span>`,
+  template: `<span class="logo" [class.logo--claro]="claro()"
+    >Última<span class="logo__milla">Milla</span></span
+  >`,
   styles: `
     @use '../../estilos/variables' as tema;
 

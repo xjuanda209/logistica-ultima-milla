@@ -4,10 +4,11 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { ESTADOS_PEDIDO, mensajeDeError } from '../../core/etiquetas';
 import { EstadoPedido, Respuesta, ResumenPanel } from '../../core/modelos';
+import { BadgeEstado } from '../../shared/badge-estado';
 
 @Component({
   selector: 'app-panel',
-  imports: [RouterLink],
+  imports: [RouterLink, BadgeEstado],
   templateUrl: './panel.html',
 })
 export class Panel implements OnInit {

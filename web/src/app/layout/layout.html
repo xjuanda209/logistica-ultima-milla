@@ -36,7 +36,9 @@
     <h1 class="superior__titulo">{{ titulo() }}</h1>
 
     <div class="superior__usuario">
-      <span class="text-body-secondary text-truncate d-none d-md-inline">{{ usuario()?.correo }}</span>
+      <span class="text-body-secondary text-truncate d-none d-md-inline">{{
+        usuario()?.correo
+      }}</span>
       <span class="badge bg-primary-subtle text-primary-emphasis">{{ nombreRol() }}</span>
       <button type="button" class="btn btn-outline-secondary text-nowrap" (click)="cerrarSesion()">
         Cerrar sesión
@@ -45,6 +47,7 @@
   </header>
 
   <main class="marco__contenido">
+    <app-sin-conexion />
     <router-outlet />
   </main>
 </div>

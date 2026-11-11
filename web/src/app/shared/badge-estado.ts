@@ -1,23 +1,34 @@
 import { Component, computed, input } from '@angular/core';
 
-import { ESTADOS_PEDIDO } from '../core/etiquetas';
-import { EstadoPedido } from '../core/modelos';
-import { Insignia } from './insignia';
+import { TipoBadge, etiquetaDe } from '../core/etiquetas';
 
 /**
- * Estado de un pedido, con su color. Úsalo SIEMPRE que se muestre el estado de un pedido:
+ * Insignia de un valor fijo, siempre con texto (el color nunca va solo). Úsala SIEMPRE que se
+ * muestre un estado o una prioridad:
  *
- *   <app-badge-estado [estado]="pedido.estado" />
+ *   <app-badge-estado [valor]="pedido.estado" />                       estado del pedido
+ *   <app-badge-estado tipo="prioridad" [valor]="pedido.prioridad" />
+ *   <app-badge-estado tipo="incidencia" [valor]="incidencia.estado" />
+ *   <app-badge-estado tipo="activo" [valor]="usuario.activo" />         Activo / Inactivo
  *
- * Los textos y colores salen de ESTADOS_PEDIDO (core/etiquetas.ts); no se repiten en las páginas.
+ * Textos y colores salen de core/etiquetas.ts; no se repiten en las páginas.
+ * Si el valor viene vacío (por ejemplo, una incidencia sin prioridad) muestra "—".
  */
 @Component({
   selector: 'app-badge-estado',
-  imports: [Insignia],
-  template: `<app-insignia [etiqueta]="etiqueta()" />`,
+  template: `
+    @if (etiqueta(); as e) {
+      <span class="badge" [style.background-color]="e.fondo" [style.color]="e.color">{{
+        e.texto
+      }}</span>
+    } @else {
+      <span class="text-body-secondary">—</span>
+    }
+  `,
 })
 export class BadgeEstado {
-  readonly estado = input.required<EstadoPedido>();
+  readonly tipo = input<TipoBadge>('pedido');
+  readonly valor = input.required<string | boolean | null | undefined>();
 
-  protected readonly etiqueta = computed(() => ESTADOS_PEDIDO[this.estado()]);
+  protected readonly etiqueta = computed(() => etiquetaDe(this.tipo(), this.valor()));
 }

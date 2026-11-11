@@ -11,39 +11,43 @@ import { Paginado } from '../core/modelos';
   selector: 'app-paginacion',
   template: `
     @if (meta(); as m) {
-      <div class="d-flex justify-content-between align-items-center gap-3">
-        <span class="text-body-secondary small">{{ rango() }}</span>
-        @if (m.last_page > 1) {
-          <div class="d-flex align-items-center gap-2">
-            <span class="text-body-secondary small d-none d-sm-inline">
-              Página {{ m.current_page }} de {{ m.last_page }}
-            </span>
-            <div class="btn-group">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-sm"
-                [disabled]="m.current_page <= 1"
-                (click)="cambiar.emit(m.current_page - 1)"
-              >
-                <i class="bi bi-chevron-left" aria-hidden="true"></i> Anterior
-              </button>
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-sm"
-                [disabled]="m.current_page >= m.last_page"
-                (click)="cambiar.emit(m.current_page + 1)"
-              >
-                Siguiente <i class="bi bi-chevron-right" aria-hidden="true"></i>
-              </button>
-            </div>
-          </div>
-        }
-      </div>
+      @if (m.total > 0) {
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span class="text-body-secondary small">{{ rango() }}</span>
+          @if (m.last_page > 1) {
+            <nav class="d-flex align-items-center gap-2" aria-label="Paginación">
+              <span class="text-body-secondary small d-none d-sm-inline">
+                Página {{ m.current_page }} de {{ m.last_page }}
+              </span>
+              <div class="btn-group">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  [disabled]="deshabilitada() || m.current_page <= 1"
+                  (click)="cambiar.emit(m.current_page - 1)"
+                >
+                  <i class="bi bi-chevron-left" aria-hidden="true"></i> Anterior
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  [disabled]="deshabilitada() || m.current_page >= m.last_page"
+                  (click)="cambiar.emit(m.current_page + 1)"
+                >
+                  Siguiente <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+            </nav>
+          }
+        </div>
+      }
     }
   `,
 })
 export class Paginacion {
   readonly meta = input<Paginado<unknown>['meta'] | null>(null);
+  /** Mientras carga otra página, los botones no responden. */
+  readonly deshabilitada = input(false);
   readonly cambiar = output<number>();
 
   /** "21–40 de 57 registros" */

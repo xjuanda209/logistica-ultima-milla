@@ -40,8 +40,7 @@ export const routes: Routes = [
         title: 'Gestión de usuarios',
         canActivate: [rolGuard],
         data: { roles: rolesDe('/usuarios') },
-        loadComponent: () =>
-          import('./features/administracion/usuarios').then((m) => m.Usuarios),
+        loadComponent: () => import('./features/administracion/usuarios').then((m) => m.Usuarios),
       },
       {
         path: 'parametrizacion',

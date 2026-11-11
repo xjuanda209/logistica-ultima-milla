@@ -6,6 +6,7 @@ import { ROLES } from '../core/etiquetas';
 import { MENU } from '../core/menu';
 import { TituloPagina } from '../core/titulo-pagina';
 import { Logo } from '../shared/logo';
+import { SinConexion } from '../shared/sin-conexion';
 
 /**
  * Marco de todas las páginas internas (mockups INT-02, INT-03, INT-04):
@@ -16,7 +17,7 @@ import { Logo } from '../shared/logo';
  */
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Logo],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Logo, SinConexion],
   templateUrl: './layout.html',
   styleUrl: './layout.scss',
   host: { '(document:keydown.escape)': 'menuMovil.set(false)' },

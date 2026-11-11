@@ -3,12 +3,13 @@ import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
-import { ESTADOS_PEDIDO, PRIORIDADES, mensajeDeError } from '../../core/etiquetas';
+import { mensajeDeError } from '../../core/etiquetas';
 import { Pedido, Respuesta } from '../../core/modelos';
+import { BadgeEstado } from '../../shared/badge-estado';
 
 @Component({
   selector: 'app-pedido-detalle',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, BadgeEstado],
   templateUrl: './pedido-detalle.html',
 })
 export class PedidoDetalle implements OnInit {
@@ -16,9 +17,6 @@ export class PedidoDetalle implements OnInit {
 
   /** Llega desde la URL (/pedidos/:id) gracias a withComponentInputBinding(). */
   readonly id = input.required<string>();
-
-  protected readonly estados = ESTADOS_PEDIDO;
-  protected readonly prioridades = PRIORIDADES;
 
   protected readonly pedido = signal<Pedido | null>(null);
   protected readonly cargando = signal(true);
