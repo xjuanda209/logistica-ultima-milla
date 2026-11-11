@@ -1,21 +1,36 @@
-<h2 class="h5 mb-3">Configuración</h2>
+<app-tarjeta titulo="Reglas de asignación">
+  @if (cargando()) {
+    <div class="placeholder-glow" aria-hidden="true">
+      <span class="placeholder rounded col-8 mb-2"></span>
+      <span class="placeholder rounded col-6"></span>
+    </div>
+  } @else if (error(); as mensaje) {
+    <app-estado-vacio
+      tono="error"
+      icono="bi-exclamation-octagon"
+      titulo="No se pudo cargar la información"
+      [texto]="mensaje"
+      [compacto]="true"
+    >
+      <button type="button" class="btn btn-outline-secondary" (click)="cargar()">Reintentar</button>
+    </app-estado-vacio>
+  } @else {
+    <p class="text-body-secondary">
+      La asignación siempre propone solo repartidores de la zona del pedido que estén disponibles.
+    </p>
 
-@if (error(); as mensaje) {
-  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
-} @else if (cargando()) {
-  <p class="text-body-secondary">Cargando…</p>
-} @else {
-  <form class="card" style="max-width: 480px" (ngSubmit)="guardar()">
-    <div class="card-body">
-      @if (exito(); as mensaje) {
-        <div class="alert alert-success py-2" role="status">{{ mensaje }}</div>
-      }
+    <form (ngSubmit)="guardar()">
       @if (errorFormulario(); as mensaje) {
-        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+        <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
       }
 
-      <div class="mb-4">
-        <label for="max-pedidos" class="form-label">Máximo de pedidos activos por repartidor</label>
+      <app-campo
+        class="col-sm-10 col-xxl-8 px-0"
+        etiqueta="Máximo de pedidos activos por repartidor (1 a 20)"
+        para="max-pedidos"
+        [obligatorio]="true"
+        [errores]="errores()['max_pedidos_activos']"
+      >
         <input
           id="max-pedidos"
           name="max_pedidos_activos"
@@ -24,17 +39,23 @@
           min="1"
           max="20"
           step="1"
-          aria-describedby="max-pedidos-ayuda"
+          required
           [class.is-invalid]="errores()['max_pedidos_activos']"
           [(ngModel)]="formulario.max_pedidos_activos"
+          (ngModelChange)="guardado.set(false)"
         />
-        <app-error-campo [mensajes]="errores()['max_pedidos_activos']" />
-        <div id="max-pedidos-ayuda" class="form-text">Número entero entre 1 y 20.</div>
-      </div>
+      </app-campo>
 
-      <button type="submit" class="btn btn-primary" [disabled]="guardando()">
-        {{ guardando() ? 'Guardando…' : 'Guardar' }}
-      </button>
-    </div>
-  </form>
-}
+      <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+        <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Guardar reglas' }}
+        </button>
+        @if (guardado()) {
+          <span class="text-success" role="status">
+            <i class="bi bi-check-lg" aria-hidden="true"></i> Cambios guardados.
+          </span>
+        }
+      </div>
+    </form>
+  }
+</app-tarjeta>

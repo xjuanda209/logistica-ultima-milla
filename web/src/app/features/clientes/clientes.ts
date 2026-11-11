@@ -3,11 +3,12 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { mensajeDeError } from '../../core/etiquetas';
 import { Cliente, Paginado } from '../../core/modelos';
-import { Paginacion } from '../../shared/paginacion';
+import { Tabla } from '../../shared/tabla';
+import { Tarjeta } from '../../shared/tarjeta';
 
 @Component({
   selector: 'app-clientes',
-  imports: [Paginacion],
+  imports: [Tarjeta, Tabla],
   templateUrl: './clientes.html',
 })
 export class Clientes implements OnInit {

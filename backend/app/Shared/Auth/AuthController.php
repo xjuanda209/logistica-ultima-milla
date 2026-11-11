@@ -14,22 +14,23 @@ class AuthController extends Controller
 {
     /**
      * POST /api/login — valida correo y contraseña y entrega un token de Sanctum.
+     * Correo inexistente, contraseña incorrecta o cuenta desactivada responden lo mismo
+     * (INT-01): así no se revela qué correos existen ni cuáles están desactivados.
      */
     public function login(LoginRequest $request): JsonResponse
     {
         $usuario = Usuario::query()->where('correo', $request->string('correo')->lower()->toString())->first();
 
-        if ($usuario === null || ! Hash::check($request->string('password')->toString(), $usuario->password)) {
-            throw new ErrorApi('CREDENCIALES_INVALIDAS', 'Correo o contraseña incorrectos.', 401);
-        }
+        $passwordCorrecta = $usuario !== null
+            && Hash::check($request->string('password')->toString(), $usuario->password);
 
-        if (! $usuario->activo) {
-            throw new ErrorApi('USUARIO_INACTIVO', 'Tu usuario está inactivo. Contacta al administrador.', 403);
+        if (! $passwordCorrecta || ! $usuario->activo) {
+            throw new ErrorApi('CREDENCIALES_INVALIDAS', 'Correo o contraseña incorrectos.', 401);
         }
 
         return response()->json([
             'token' => $usuario->createToken('api')->plainTextToken,
-            'usuario' => new UsuarioResource($usuario->load('comercio')),
+            'usuario' => new UsuarioResource($usuario->load('comercio:id,nombre')),
         ]);
     }
 
@@ -48,6 +49,6 @@ class AuthController extends Controller
      */
     public function me(Request $request): UsuarioResource
     {
-        return new UsuarioResource($request->user()->load('comercio'));
+        return new UsuarioResource($request->user()->load('comercio:id,nombre'));
     }
 }

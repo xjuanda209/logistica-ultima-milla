@@ -1,46 +1,30 @@
-<h1 class="h3 mb-3">Incidencias</h1>
-
-@if (error(); as mensaje) {
-  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
-} @else if (cargando()) {
-  <p class="text-body-secondary">Cargando…</p>
-} @else if (incidencias().length === 0) {
-  <p class="text-body-secondary">No hay incidencias para mostrar.</p>
-} @else {
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Pedido</th>
-          <th>Tipo</th>
-          <th>Descripción</th>
-          <th>Reportó</th>
-          <th>Fecha</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (incidencia of incidencias(); track incidencia.id) {
-          <tr>
-            <td>
-              @if (incidencia.pedido; as pedido) {
-                <a [routerLink]="['/pedidos', pedido.id]">{{ pedido.numero }}</a>
-              }
-            </td>
-            <td>{{ incidencia.tipo?.nombre }}</td>
-            <td>{{ incidencia.descripcion }}</td>
-            <td>{{ incidencia.usuario?.nombre }}</td>
-            <td class="text-nowrap">{{ incidencia.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
-            <td>
-              <span class="badge" [class]="estados[incidencia.estado].clase">
-                {{ estados[incidencia.estado].texto }}
-              </span>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <app-paginacion [meta]="meta()" (cambiar)="cargar($event)" />
-}
+<app-tarjeta>
+  <app-tabla
+    titulo="Incidencias"
+    [columnas]="['Pedido', 'Tipo', 'Descripción', 'Reportó', 'Fecha', 'Prioridad', 'Estado']"
+    [cargando]="cargando()"
+    [error]="error()"
+    [vacia]="incidencias().length === 0"
+    textoVacio="No hay incidencias para mostrar."
+    iconoVacio="bi-exclamation-triangle"
+    [meta]="meta()"
+    (cambiarPagina)="cargar($event)"
+    (reintentar)="cargar(1)"
+  >
+    @for (incidencia of incidencias(); track incidencia.id) {
+      <tr>
+        <td>
+          @if (incidencia.pedido; as pedido) {
+            <a [routerLink]="['/pedidos', pedido.id]">{{ pedido.numero }}</a>
+          }
+        </td>
+        <td>{{ incidencia.tipo?.nombre }}</td>
+        <td>{{ incidencia.descripcion }}</td>
+        <td>{{ incidencia.usuario?.nombre }}</td>
+        <td class="text-nowrap">{{ incidencia.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+        <td><app-badge-estado tipo="prioridad" [valor]="incidencia.prioridad" /></td>
+        <td><app-badge-estado tipo="incidencia" [valor]="incidencia.estado" /></td>
+      </tr>
+    }
+  </app-tabla>
+</app-tarjeta>

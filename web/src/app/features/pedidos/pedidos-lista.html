@@ -1,79 +1,52 @@
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-  <h1 class="h3 mb-0">Pedidos</h1>
+<div class="d-grid gap-4">
+  <app-tarjeta>
+    <div class="d-flex flex-wrap align-items-end gap-3">
+      <div>
+        <label for="filtro-estado" class="form-label">Estado</label>
+        <select id="filtro-estado" class="form-select" #filtro (change)="filtrar(filtro.value)">
+          <option value="" [selected]="!estado()">Todos</option>
+          @for (opcion of listaEstados; track opcion) {
+            <option [value]="opcion" [selected]="estado() === opcion">
+              {{ estados[opcion].texto }}
+            </option>
+          }
+        </select>
+      </div>
+    </div>
+  </app-tarjeta>
 
-  <div class="d-flex align-items-center gap-2">
-    <label for="filtro-estado" class="form-label mb-0 small text-body-secondary">Estado</label>
-    <select
-      id="filtro-estado"
-      class="form-select form-select-sm"
-      style="width: auto"
-      #filtro
-      (change)="filtrar(filtro.value)"
+  <app-tarjeta>
+    <app-tabla
+      titulo="Pedidos"
+      [columnas]="columnas"
+      [cargando]="cargando()"
+      [error]="error()"
+      [vacia]="pedidos().length === 0"
+      textoVacio="No hay pedidos para mostrar."
+      [meta]="meta()"
+      (cambiarPagina)="cargar($event)"
+      (reintentar)="cargar(1)"
     >
-      <option value="" [selected]="!estado()">Todos</option>
-      @for (opcion of listaEstados; track opcion) {
-        <option [value]="opcion" [selected]="estado() === opcion">
-          {{ estados[opcion].texto }}
-        </option>
-      }
-    </select>
-  </div>
-</div>
-
-@if (error(); as mensaje) {
-  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
-} @else if (cargando()) {
-  <p class="text-body-secondary">Cargando…</p>
-} @else if (pedidos().length === 0) {
-  <p class="text-body-secondary">No hay pedidos para mostrar.</p>
-} @else {
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
+      @for (pedido of pedidos(); track pedido.id) {
         <tr>
-          <th>Número</th>
-          <th>Cliente</th>
-          <th>Comercio</th>
-          <th>Zona</th>
-          <th>Franja de entrega</th>
-          <th>Prioridad</th>
-          <th>Estado</th>
-          <th>Repartidor</th>
-          <th></th>
+          <td class="fw-semibold text-nowrap">{{ pedido.numero }}</td>
+          <td>{{ pedido.cliente?.nombre }}</td>
+          <td>{{ pedido.comercio?.nombre }}</td>
+          <td>{{ pedido.zona?.nombre }}</td>
+          <td class="text-nowrap">
+            {{ pedido.franja_inicio | date: 'dd/MM/yyyy HH:mm' }} –
+            {{ pedido.franja_fin | date: 'HH:mm' }}
+          </td>
+          <td><app-badge-estado tipo="prioridad" [valor]="pedido.prioridad" /></td>
+          <td><app-badge-estado [valor]="pedido.estado" /></td>
+          <td>{{ pedido.repartidor?.nombre ?? '—' }}</td>
+          <td class="text-end">
+            <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/pedidos', pedido.id]">
+              Ver detalle
+            </a>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        @for (pedido of pedidos(); track pedido.id) {
-          <tr>
-            <td class="fw-semibold">{{ pedido.numero }}</td>
-            <td>{{ pedido.cliente?.nombre }}</td>
-            <td>{{ pedido.comercio?.nombre }}</td>
-            <td>{{ pedido.zona?.nombre }}</td>
-            <td class="text-nowrap">
-              {{ pedido.franja_inicio | date: 'dd/MM/yyyy HH:mm' }} –
-              {{ pedido.franja_fin | date: 'HH:mm' }}
-            </td>
-            <td>
-              <span class="badge" [class]="prioridades[pedido.prioridad].clase">
-                {{ prioridades[pedido.prioridad].texto }}
-              </span>
-            </td>
-            <td>
-              <span class="badge" [class]="estados[pedido.estado].clase">
-                {{ estados[pedido.estado].texto }}
-              </span>
-            </td>
-            <td>{{ pedido.repartidor?.nombre ?? '—' }}</td>
-            <td class="text-end">
-              <a class="btn btn-outline-primary btn-sm" [routerLink]="['/pedidos', pedido.id]">
-                Ver
-              </a>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <app-paginacion [meta]="meta()" (cambiar)="cargar($event)" />
-}
+      }
+    </app-tabla>
+  </app-tarjeta>
+</div>

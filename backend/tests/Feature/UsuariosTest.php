@@ -41,7 +41,7 @@ test('el administrador lista los usuarios paginados con su comercio y su zona', 
     $respuesta = $this->getJson('/api/usuarios')
         ->assertOk()
         ->assertJsonCount(3, 'data')
-        ->assertJsonStructure(['data' => [['id', 'nombre', 'correo', 'rol', 'activo', 'comercio', 'zona']], 'meta'])
+        ->assertJsonStructure(['data' => [['id', 'nombre', 'correo', 'rol', 'activo', 'comercio', 'zona', 'created_at', 'updated_at']], 'meta'])
         ->assertJsonMissingPath('data.0.password');
 
     $porId = collect($respuesta->json('data'))->keyBy('id');
@@ -134,7 +134,7 @@ test('el correo es único sin importar mayúsculas', function () {
 
     $this->postJson('/api/usuarios', datosDeUsuario(['correo' => 'OLGA@prueba.test']))
         ->assertUnprocessable()
-        ->assertJsonPath('error.campos.correo.0', 'Ya existe un usuario con ese correo.');
+        ->assertJsonPath('error.campos.correo.0', 'El correo ya existe.');
 });
 
 // ---------- Editar ----------
@@ -230,6 +230,10 @@ test('un administrador no puede desactivarse a sí mismo', function () {
     $this->putJson("/api/usuarios/{$administrador->id}/estado", ['activo' => false])
         ->assertConflict()
         ->assertJsonPath('error.codigo', 'NO_PUEDES_DESACTIVARTE')
+        ->assertJsonPath(
+            'error.mensaje',
+            'No puedes desactivar tu propia cuenta: el sistema debe conservar al menos un administrador activo.',
+        )
         ->assertJsonStructure(['error' => ['codigo', 'mensaje', 'campos']]);
 
     expect($administrador->fresh()->activo)->toBeTrue();
@@ -333,8 +337,9 @@ test('un usuario desactivado no puede iniciar sesión y sus tokens dejan de serv
         ->assertJsonPath('error.codigo', 'NO_AUTENTICADO');
 
     $this->postJson('/api/login', $credenciales)
-        ->assertForbidden()
-        ->assertJsonPath('error.codigo', 'USUARIO_INACTIVO');
+        ->assertUnauthorized()
+        ->assertJsonPath('error.codigo', 'CREDENCIALES_INVALIDAS')
+        ->assertJsonPath('error.mensaje', 'Correo o contraseña incorrectos.');
 
     expect($usuario->tokens()->count())->toBe(0);
 });

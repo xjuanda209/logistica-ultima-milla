@@ -1,0 +1,161 @@
+// Marco de la aplicación: barra lateral + barra superior. Los colores salen del tema.
+@use '../../estilos/variables' as tema;
+
+$ancho-lateral: 248px;
+$alto-superior: 68px;
+$escritorio: 992px;
+
+.marco {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  background: tema.$fondo-pagina; // gris de la página; tarjetas, tablas y campos quedan blancos
+}
+
+.marco__contenido {
+  flex: 1;
+  width: 100%;
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+// ── Barra lateral ────────────────────────────────────────────────────────────
+.lateral {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  width: $ancho-lateral;
+  overflow-y: auto;
+  background: tema.$lateral-fondo;
+  color: rgba(tema.$white, 0.82);
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+}
+
+.lateral--abierto {
+  box-shadow: tema.$box-shadow-lg;
+  transform: none;
+}
+
+.lateral__fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 1035;
+  background: rgba(tema.$gray-900, 0.45);
+}
+
+.lateral__marca {
+  display: block;
+  padding: 1.375rem 1.5rem 1.5rem;
+  font-size: 1.5rem;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.lateral__nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.lateral__enlace {
+  position: relative;
+  display: block;
+  padding: 0.875rem 1.5rem;
+  color: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    background: rgba(tema.$white, 0.06);
+    color: tema.$white;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid tema.$naranja;
+    outline-offset: -2px;
+  }
+}
+
+// Ítem activo: fondo más claro y franja naranja a la izquierda (no depende solo del color).
+.lateral__enlace--activo {
+  background: tema.$lateral-activo;
+  color: tema.$white;
+  font-weight: 600;
+
+  &::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: tema.$naranja;
+    content: '';
+  }
+}
+
+// ── Barra superior ───────────────────────────────────────────────────────────
+.superior {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: $alto-superior;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid tema.$gray-300;
+  background: tema.$white;
+}
+
+.superior__titulo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.superior__usuario {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+// ── Escritorio: la barra lateral queda fija y el contenido se corre ──────────
+@media (min-width: $escritorio) {
+  .lateral {
+    box-shadow: none;
+    transform: none;
+  }
+
+  .lateral__fondo,
+  .superior__menu {
+    display: none;
+  }
+
+  .marco {
+    margin-left: $ancho-lateral;
+  }
+
+  .marco__contenido {
+    padding: 2rem;
+  }
+
+  .superior {
+    padding: 0.75rem 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lateral {
+    transition: none;
+  }
+}

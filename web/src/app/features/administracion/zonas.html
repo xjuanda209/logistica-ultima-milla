@@ -1,63 +1,72 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h5 mb-0">Zonas</h2>
-  <button type="button" class="btn btn-primary" (click)="abrirFormulario()">Nueva zona</button>
-</div>
+<app-tarjeta titulo="Zonas y cobertura">
+  <button acciones type="button" class="btn btn-primary" (click)="abrirFormulario()">
+    + Nueva zona
+  </button>
 
-@if (exito(); as mensaje) {
-  <div class="alert alert-success d-flex justify-content-between align-items-center" role="status">
-    <span>{{ mensaje }}</span>
-    <button type="button" class="btn-close" aria-label="Cerrar" (click)="exito.set(null)"></button>
-  </div>
-}
+  <app-tabla
+    titulo="Zonas y cobertura"
+    [columnas]="columnas"
+    [cargando]="cargando()"
+    [error]="error()"
+    [vacia]="datos().length === 0"
+    textoVacio="Todavía no hay zonas."
+    detalleVacio="Crea la primera con «+ Nueva zona»."
+    iconoVacio="bi-geo-alt"
+    [meta]="meta()"
+    (cambiarPagina)="cargar($event)"
+    (reintentar)="cargar(1)"
+  >
+    @for (zona of datos(); track zona.id) {
+      <tr>
+        <td>
+          {{ zona.nombre }}
+          @if (zona.descripcion) {
+            <div class="small text-body-secondary">{{ zona.descripcion }}</div>
+          }
+        </td>
+        <td>
+          <div class="d-flex flex-wrap gap-2">
+            @for (repartidor of zona.repartidores ?? []; track repartidor.id) {
+              <span class="badge bg-primary-subtle text-primary-emphasis">{{
+                repartidor.nombre
+              }}</span>
+            } @empty {
+              <span class="text-body-secondary small">Sin repartidores</span>
+            }
+          </div>
+        </td>
+        <td class="text-end">
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="abrirFormulario(zona)"
+          >
+            Editar
+          </button>
+        </td>
+      </tr>
+    }
+  </app-tabla>
 
-@if (error(); as mensaje) {
-  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
-} @else if (cargando()) {
-  <p class="text-body-secondary">Cargando…</p>
-} @else if (zonas().length === 0) {
-  <p class="text-body-secondary">Todavía no hay zonas. Crea la primera con "Nueva zona".</p>
-} @else {
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Descripción</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (zona of zonas(); track zona.id) {
-          <tr>
-            <td class="fw-semibold">{{ zona.nombre }}</td>
-            <td>{{ zona.descripcion }}</td>
-            <td class="text-end">
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-sm"
-                (click)="abrirFormulario(zona)"
-              >
-                Editar
-              </button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <app-paginacion [meta]="meta()" (cambiar)="cargar($event)" />
-}
+  <p class="text-body-secondary small mt-3 mb-0">
+    Cada repartidor cubre una zona; se asigna al crearlo o editarlo en Usuarios.
+  </p>
+</app-tarjeta>
 
 @if (modalAbierto()) {
   <app-modal [titulo]="editando() ? 'Editar zona' : 'Nueva zona'" (cerrar)="cerrarFormulario()">
     <form (ngSubmit)="guardar()">
       @if (errorFormulario(); as mensaje) {
-        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+        <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
       }
 
-      <div class="mb-3">
-        <label for="zona-nombre" class="form-label">Nombre</label>
+      <app-campo
+        class="mb-3"
+        etiqueta="Nombre"
+        para="zona-nombre"
+        [obligatorio]="true"
+        [errores]="errores()['nombre']"
+      >
         <input
           id="zona-nombre"
           name="nombre"
@@ -68,11 +77,13 @@
           [class.is-invalid]="errores()['nombre']"
           [(ngModel)]="formulario.nombre"
         />
-        <app-error-campo [mensajes]="errores()['nombre']" />
-      </div>
+      </app-campo>
 
-      <div class="mb-4">
-        <label for="zona-descripcion" class="form-label">Descripción (opcional)</label>
+      <app-campo
+        etiqueta="Descripción"
+        para="zona-descripcion"
+        [errores]="errores()['descripcion']"
+      >
         <textarea
           id="zona-descripcion"
           name="descripcion"
@@ -82,10 +93,9 @@
           [class.is-invalid]="errores()['descripcion']"
           [(ngModel)]="formulario.descripcion"
         ></textarea>
-        <app-error-campo [mensajes]="errores()['descripcion']" />
-      </div>
+      </app-campo>
 
-      <div class="d-flex justify-content-end gap-2">
+      <div class="d-flex justify-content-end gap-2 mt-4">
         <button type="button" class="btn btn-outline-secondary" (click)="cerrarFormulario()">
           Cancelar
         </button>

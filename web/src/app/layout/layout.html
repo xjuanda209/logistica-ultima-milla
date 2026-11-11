@@ -1,58 +1,53 @@
-<nav class="navbar navbar-dark bg-dark sticky-top px-3">
-  <div class="d-flex align-items-center gap-2">
+<aside class="lateral" [class.lateral--abierto]="menuMovil()" aria-label="Menú principal">
+  <a class="lateral__marca" routerLink="/" (click)="menuMovil.set(false)">
+    <app-logo [claro]="true" />
+  </a>
+
+  <nav class="lateral__nav">
+    @for (opcion of opciones(); track opcion.ruta) {
+      <a
+        class="lateral__enlace"
+        [routerLink]="opcion.ruta"
+        routerLinkActive="lateral__enlace--activo"
+        ariaCurrentWhenActive="page"
+        (click)="menuMovil.set(false)"
+      >
+        {{ opcion.titulo }}
+      </a>
+    }
+  </nav>
+</aside>
+
+@if (menuMovil()) {
+  <div class="lateral__fondo" (click)="menuMovil.set(false)"></div>
+}
+
+<div class="marco">
+  <header class="superior">
     <button
       type="button"
-      class="btn btn-outline-light btn-sm d-md-none"
-      aria-label="Abrir o cerrar el menú"
-      [attr.aria-expanded]="menuAbierto()"
-      (click)="alternarMenu()"
+      class="btn btn-outline-secondary superior__menu px-2 py-1"
+      aria-label="Abrir el menú"
+      (click)="menuMovil.set(true)"
     >
-      ☰
+      <i class="bi bi-list fs-4 d-block" aria-hidden="true"></i>
     </button>
-    <span class="navbar-brand mb-0 h1 fs-6">Logística de Última Milla</span>
-  </div>
 
-  <div class="d-flex align-items-center gap-3 text-white">
-    <div class="text-end lh-sm d-none d-sm-block">
-      <div class="small fw-semibold">{{ usuario()?.nombre }}</div>
-      <div class="small text-white-50">
-        {{ nombreRol() }}
-        @if (usuario()?.comercio; as comercio) {
-          · {{ comercio.nombre }}
-        }
-      </div>
+    <h1 class="superior__titulo">{{ titulo() }}</h1>
+
+    <div class="superior__usuario">
+      <span class="text-body-secondary text-truncate d-none d-md-inline">{{
+        usuario()?.correo
+      }}</span>
+      <span class="badge bg-primary-subtle text-primary-emphasis">{{ nombreRol() }}</span>
+      <button type="button" class="btn btn-outline-secondary text-nowrap" (click)="cerrarSesion()">
+        Cerrar sesión
+      </button>
     </div>
-    <button type="button" class="btn btn-outline-light btn-sm" (click)="cerrarSesion()">
-      Cerrar sesión
-    </button>
-  </div>
-</nav>
+  </header>
 
-<div class="container-fluid">
-  <div class="row">
-    <aside
-      class="col-md-3 col-lg-2 bg-body-tertiary border-end p-3 d-md-block"
-      [class.d-none]="!menuAbierto()"
-      style="min-height: calc(100vh - 56px)"
-    >
-      <ul class="nav nav-pills flex-column gap-1">
-        @for (opcion of opciones(); track opcion.ruta) {
-          <li class="nav-item">
-            <a
-              class="nav-link"
-              [routerLink]="opcion.ruta"
-              routerLinkActive="active"
-              (click)="menuAbierto.set(false)"
-            >
-              {{ opcion.titulo }}
-            </a>
-          </li>
-        }
-      </ul>
-    </aside>
-
-    <main class="col-md-9 col-lg-10 p-4">
-      <router-outlet />
-    </main>
-  </div>
+  <main class="marco__contenido">
+    <app-sin-conexion />
+    <router-outlet />
+  </main>
 </div>

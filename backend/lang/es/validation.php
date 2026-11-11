@@ -97,5 +97,7 @@ return [
         'cedula' => 'cédula',
         'max_pedidos_activos' => 'máximo de pedidos activos',
         'por_pagina' => 'registros por página',
+        'numero' => 'número',
+        'con_repartidores' => 'con repartidores',
     ],
 ];

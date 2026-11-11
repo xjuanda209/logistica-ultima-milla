@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, of, tap } from 'rxjs';
 
 import { ApiService } from './api.service';
+import { CatalogosService } from './catalogos.service';
 import { RespuestaLogin, Rol, Usuario } from './modelos';
 
 const CLAVE_TOKEN = 'lum_token';
@@ -14,6 +15,7 @@ const CLAVE_USUARIO = 'lum_usuario';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly api = inject(ApiService);
+  private readonly catalogos = inject(CatalogosService);
 
   private readonly _token = signal<string | null>(localStorage.getItem(CLAVE_TOKEN));
   private readonly _usuario = signal<Usuario | null>(leerUsuarioGuardado());
@@ -25,6 +27,7 @@ export class AuthService {
   login(correo: string, password: string): Observable<RespuestaLogin> {
     return this.api.post<RespuestaLogin>('/login', { correo, password }).pipe(
       tap((respuesta) => {
+        this.catalogos.limpiar();
         localStorage.setItem(CLAVE_TOKEN, respuesta.token);
         localStorage.setItem(CLAVE_USUARIO, JSON.stringify(respuesta.usuario));
         this._token.set(respuesta.token);
@@ -42,6 +45,7 @@ export class AuthService {
   }
 
   limpiarSesion(): void {
+    this.catalogos.limpiar();
     localStorage.removeItem(CLAVE_TOKEN);
     localStorage.removeItem(CLAVE_USUARIO);
     this._token.set(null);
@@ -53,9 +57,13 @@ export class AuthService {
     return usuario !== null && roles.includes(usuario.rol);
   }
 
-  /** Primera pantalla que ve cada rol después de entrar. */
+  /**
+   * Primera pantalla que ve cada rol después de entrar (docs/interfaces/README.md):
+   * administrador y operador → Panel; comercio → Pedidos. El repartidor trabaja en la app móvil
+   * ("Mis pedidos"); si entra a la web, ve sus pedidos.
+   */
   rutaInicial(): string {
-    return this.tieneRol('repartidor') ? '/pedidos' : '/panel';
+    return this.tieneRol('administrador', 'operador') ? '/panel' : '/pedidos';
   }
 }
 

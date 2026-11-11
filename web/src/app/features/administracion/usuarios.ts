@@ -1,14 +1,26 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, Injector, OnInit, afterNextRender, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { ErroresDeCampos, ROLES, camposDeError, mensajeDeError } from '../../core/etiquetas';
+import { CatalogosService } from '../../core/catalogos.service';
+import {
+  ErroresDeCampos,
+  ROLES,
+  camposDeError,
+  codigoDeError,
+  mensajeDeError,
+  mensajeDeFormulario,
+} from '../../core/etiquetas';
+import { MensajesService } from '../../core/mensajes.service';
 import { Comercio, Paginado, Respuesta, Rol, Usuario, Zona } from '../../core/modelos';
-import { ErrorCampo } from '../../shared/error-campo';
+import { BadgeEstado } from '../../shared/badge-estado';
+import { Campo } from '../../shared/campo';
+import { Confirmacion } from '../../shared/confirmacion';
 import { Modal } from '../../shared/modal';
-import { Paginacion } from '../../shared/paginacion';
+import { Columna, Tabla } from '../../shared/tabla';
+import { Tarjeta } from '../../shared/tarjeta';
 
 interface FormularioUsuario {
   nombre: string;
@@ -19,39 +31,61 @@ interface FormularioUsuario {
   zona_id: number | null;
 }
 
+/** Errores de la API que son reglas de negocio de esta pantalla: se muestran como aviso ámbar. */
+const REGLAS_DE_USUARIOS = [
+  'NO_PUEDES_DESACTIVARTE',
+  'NO_PUEDES_CAMBIAR_TU_ROL',
+  'ULTIMO_ADMINISTRADOR',
+];
+
+/**
+ * Gestión de usuarios (INT-02): tabla de usuarios y, debajo, el formulario para crear o editar.
+ * Ajustes al modelo: se mantiene el campo nombre, la zona aparece si el rol es repartidor y en
+ * lugar de "creado / modificado por" se muestran solo las fechas.
+ */
 @Component({
   selector: 'app-usuarios',
-  imports: [FormsModule, Paginacion, Modal, ErrorCampo],
+  imports: [DatePipe, FormsModule, Tarjeta, Tabla, BadgeEstado, Campo, Modal, Confirmacion],
   templateUrl: './usuarios.html',
 })
 export class Usuarios implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly catalogos = inject(CatalogosService);
+  private readonly mensajes = inject(MensajesService);
+  private readonly injector = inject(Injector);
 
   protected readonly nombresRol = ROLES;
   protected readonly roles = Object.keys(ROLES) as Rol[];
   protected readonly miId = this.auth.usuario()?.id ?? null;
+  protected readonly columnas: Columna[] = ['Correo', 'Rol', 'Estado', 'Acciones'];
 
   // Lista
-  protected readonly usuarios = signal<Usuario[]>([]);
+  protected readonly datos = signal<Usuario[]>([]);
   protected readonly meta = signal<Paginado<Usuario>['meta'] | null>(null);
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly exito = signal<string | null>(null);
-  /** Id del usuario al que se le está cambiando el estado (para deshabilitar su botón). */
+  /** Regla de negocio que impidió una acción de la tabla (aviso ámbar debajo de ella). */
+  protected readonly aviso = signal<string | null>(null);
+  /** Usuario al que se le pide confirmar la desactivación. */
+  protected readonly porDesactivar = signal<Usuario | null>(null);
+  /** Id del usuario al que se le está cambiando el estado (para deshabilitar sus botones). */
   protected readonly cambiandoEstado = signal<number | null>(null);
 
   // Opciones de los <select> del formulario
   protected readonly comercios = signal<Comercio[]>([]);
   protected readonly zonas = signal<Zona[]>([]);
 
-  // Modales: 'formulario' (crear / editar) o 'password' (restablecer contraseña)
-  protected readonly modal = signal<'formulario' | 'password' | null>(null);
+  // Formulario (tarjeta debajo de la tabla, como en el mockup)
+  protected readonly formularioAbierto = signal(false);
   protected readonly editando = signal<Usuario | null>(null);
   protected readonly guardando = signal(false);
   protected readonly errorFormulario = signal<string | null>(null);
   protected readonly errores = signal<ErroresDeCampos>({});
   protected formulario: FormularioUsuario = formularioVacio();
+
+  // Modal "Restablecer contraseña"
+  protected readonly restableciendo = signal<Usuario | null>(null);
   protected passwordNueva = '';
 
   ngOnInit(): void {
@@ -65,7 +99,7 @@ export class Usuarios implements OnInit {
 
     this.api.get<Paginado<Usuario>>('/usuarios', { page: pagina }).subscribe({
       next: (respuesta) => {
-        this.usuarios.set(respuesta.data);
+        this.datos.set(respuesta.data);
         this.meta.set(respuesta.meta);
         this.cargando.set(false);
       },
@@ -76,18 +110,20 @@ export class Usuarios implements OnInit {
     });
   }
 
-  /** Comercios y zonas para los <select>. por_pagina=100 trae el catálogo completo. */
+  /** Comercios y zonas para los <select>, desde los catálogos en memoria. */
   private cargarOpciones(): void {
-    this.api.get<Paginado<Comercio>>('/comercios', { por_pagina: 100 }).subscribe({
-      next: (respuesta) => this.comercios.set(respuesta.data),
-      error: (error: unknown) => this.error.set(mensajeDeError(error)),
+    this.catalogos.comercios().subscribe({
+      next: (comercios) => this.comercios.set(comercios),
+      error: (error: unknown) => this.mensajes.error(mensajeDeError(error)),
     });
 
-    this.api.get<Paginado<Zona>>('/zonas', { por_pagina: 100 }).subscribe({
-      next: (respuesta) => this.zonas.set(respuesta.data),
-      error: (error: unknown) => this.error.set(mensajeDeError(error)),
+    this.catalogos.zonas().subscribe({
+      next: (zonas) => this.zonas.set(zonas),
+      error: (error: unknown) => this.mensajes.error(mensajeDeError(error)),
     });
   }
+
+  // ── Formulario ──────────────────────────────────────────────────────────────
 
   protected abrirFormulario(usuario: Usuario | null = null): void {
     this.editando.set(usuario);
@@ -101,23 +137,19 @@ export class Usuarios implements OnInit {
           zona_id: usuario.zona_id,
         }
       : formularioVacio();
-    this.abrirModal('formulario');
-  }
-
-  protected abrirPassword(usuario: Usuario): void {
-    this.editando.set(usuario);
-    this.passwordNueva = '';
-    this.abrirModal('password');
-  }
-
-  private abrirModal(modal: 'formulario' | 'password'): void {
     this.errorFormulario.set(null);
     this.errores.set({});
-    this.modal.set(modal);
+    this.formularioAbierto.set(true);
+
+    // El formulario está debajo de la tabla: se lleva el foco (y la vista) a su primer campo.
+    afterNextRender(() => document.getElementById('usuario-nombre')?.focus(), {
+      injector: this.injector,
+    });
   }
 
-  protected cerrarModal(): void {
-    this.modal.set(null);
+  protected cerrarFormulario(): void {
+    this.formularioAbierto.set(false);
+    this.editando.set(null);
   }
 
   protected guardar(): void {
@@ -126,34 +158,6 @@ export class Usuarios implements OnInit {
       ? this.api.put<Respuesta<Usuario>>(`/usuarios/${usuario.id}`, this.formulario)
       : this.api.post<Respuesta<Usuario>>('/usuarios', this.formulario);
 
-    this.enviar(peticion, (guardado) => {
-      this.exito.set(
-        `El usuario "${guardado.nombre}" se ${usuario ? 'actualizó' : 'creó'} correctamente.`,
-      );
-      this.cargar(usuario ? (this.meta()?.current_page ?? 1) : 1);
-    });
-  }
-
-  protected guardarPassword(): void {
-    const usuario = this.editando();
-    if (!usuario) {
-      return;
-    }
-
-    const peticion = this.api.put<Respuesta<Usuario>>(`/usuarios/${usuario.id}/password`, {
-      password: this.passwordNueva,
-    });
-
-    this.enviar(peticion, (guardado) =>
-      this.exito.set(`La contraseña de "${guardado.nombre}" se restableció correctamente.`),
-    );
-  }
-
-  /** Envía un formulario del modal: si sale bien lo cierra; si no, muestra los errores por campo. */
-  private enviar(
-    peticion: Observable<Respuesta<Usuario>>,
-    alGuardar: (usuario: Usuario) => void,
-  ): void {
     this.guardando.set(true);
     this.errorFormulario.set(null);
     this.errores.set({});
@@ -161,21 +165,34 @@ export class Usuarios implements OnInit {
     peticion.subscribe({
       next: (respuesta) => {
         this.guardando.set(false);
-        this.modal.set(null);
-        alGuardar(respuesta.data);
+        this.cerrarFormulario();
+        this.mensajes.exito(
+          `Usuario ${respuesta.data.correo} ${usuario ? 'actualizado' : 'creado'} correctamente.`,
+        );
+        this.cargar(usuario ? (this.meta()?.current_page ?? 1) : 1);
       },
       error: (error: unknown) => {
         this.guardando.set(false);
-        this.errorFormulario.set(mensajeDeError(error));
+        this.errorFormulario.set(mensajeDeFormulario(error));
         this.errores.set(camposDeError(error));
       },
     });
   }
 
+  // ── Activar / desactivar ────────────────────────────────────────────────────
+
+  /** Desactivar pide confirmación (cierra las sesiones del usuario); activar no. */
+  protected alternarEstado(usuario: Usuario): void {
+    if (usuario.activo) {
+      this.porDesactivar.set(usuario);
+    } else {
+      this.cambiarEstado(usuario);
+    }
+  }
+
   protected cambiarEstado(usuario: Usuario): void {
     this.cambiandoEstado.set(usuario.id);
-    this.error.set(null);
-    this.exito.set(null);
+    this.aviso.set(null);
 
     this.api
       .put<Respuesta<Usuario>>(`/usuarios/${usuario.id}/estado`, { activo: !usuario.activo })
@@ -184,21 +201,74 @@ export class Usuarios implements OnInit {
           const actualizado = respuesta.data;
 
           this.cambiandoEstado.set(null);
-          this.usuarios.update((usuarios) =>
+          this.porDesactivar.set(null);
+          this.datos.update((usuarios) =>
             usuarios.map((u) => (u.id === actualizado.id ? actualizado : u)),
           );
-          this.exito.set(
-            `El usuario "${actualizado.nombre}" quedó ${actualizado.activo ? 'activo' : 'inactivo'}.`,
+          this.mensajes.exito(
+            `Usuario ${actualizado.correo} ${actualizado.activo ? 'activado' : 'desactivado'}.`,
           );
         },
         error: (error: unknown) => {
           this.cambiandoEstado.set(null);
-          this.error.set(mensajeDeError(error));
+          this.porDesactivar.set(null);
+          this.mostrarErrorDeAccion(error);
         },
       });
+  }
+
+  // ── Restablecer contraseña ──────────────────────────────────────────────────
+
+  protected abrirPassword(usuario: Usuario): void {
+    this.restableciendo.set(usuario);
+    this.passwordNueva = '';
+    this.errorFormulario.set(null);
+    this.errores.set({});
+  }
+
+  protected guardarPassword(): void {
+    const usuario = this.restableciendo();
+    if (!usuario) {
+      return;
+    }
+
+    this.guardando.set(true);
+    this.errorFormulario.set(null);
+    this.errores.set({});
+
+    this.api
+      .put<Respuesta<Usuario>>(`/usuarios/${usuario.id}/password`, { password: this.passwordNueva })
+      .subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.restableciendo.set(null);
+          this.mensajes.exito(`Contraseña de ${usuario.correo} restablecida correctamente.`);
+        },
+        error: (error: unknown) => {
+          this.guardando.set(false);
+          this.errorFormulario.set(mensajeDeFormulario(error));
+          this.errores.set(camposDeError(error));
+        },
+      });
+  }
+
+  /** Una regla de negocio va como aviso ámbar bajo la tabla (INT-02); cualquier otro error, en un toast. */
+  private mostrarErrorDeAccion(error: unknown): void {
+    if (REGLAS_DE_USUARIOS.includes(codigoDeError(error) ?? '')) {
+      this.aviso.set(mensajeDeError(error));
+    } else {
+      this.mensajes.error(mensajeDeError(error));
+    }
   }
 }
 
 function formularioVacio(): FormularioUsuario {
-  return { nombre: '', correo: '', password: '', rol: 'operador', comercio_id: null, zona_id: null };
+  return {
+    nombre: '',
+    correo: '',
+    password: '',
+    rol: 'operador',
+    comercio_id: null,
+    zona_id: null,
+  };
 }

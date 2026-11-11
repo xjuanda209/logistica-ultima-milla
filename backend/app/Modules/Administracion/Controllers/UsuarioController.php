@@ -16,12 +16,23 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class UsuarioController extends Controller
 {
     /**
-     * GET /api/usuarios — lista paginada de todos los usuarios.
+     * Relaciones que muestra UsuarioResource, cargadas por adelantado y solo con las columnas que usa.
+     *
+     * @var list<string>
+     */
+    private const RELACIONES = ['comercio:id,nombre', 'zona:id,nombre'];
+
+    /**
+     * GET /api/usuarios — lista paginada de todos los usuarios (sin la contraseña).
      */
     public function index(): AnonymousResourceCollection
     {
         $usuarios = Usuario::query()
-            ->with(['comercio', 'zona'])
+            ->select([
+                'id', 'nombre', 'correo', 'rol', 'activo', 'comercio_id', 'zona_id', 'disponibilidad',
+                'created_at', 'updated_at',
+            ])
+            ->with(self::RELACIONES)
             ->orderBy('nombre')
             ->paginate(20);
 
@@ -38,7 +49,7 @@ class UsuarioController extends Controller
             'activo' => true,
         ]);
 
-        return new UsuarioResource($usuario->load(['comercio', 'zona']));
+        return new UsuarioResource($usuario->load(self::RELACIONES));
     }
 
     /**
@@ -58,7 +69,7 @@ class UsuarioController extends Controller
 
         $usuario->update($this->datosSegunRol($request->validated(), $usuario));
 
-        return new UsuarioResource($usuario->load(['comercio', 'zona']));
+        return new UsuarioResource($usuario->load(self::RELACIONES));
     }
 
     /**
@@ -71,7 +82,11 @@ class UsuarioController extends Controller
         $activo = $request->boolean('activo');
 
         if (! $activo && $usuario->is($request->user())) {
-            throw new ErrorApi('NO_PUEDES_DESACTIVARTE', 'No puedes desactivar tu propio usuario.', 409);
+            throw new ErrorApi(
+                'NO_PUEDES_DESACTIVARTE',
+                'No puedes desactivar tu propia cuenta: el sistema debe conservar al menos un administrador activo.',
+                409,
+            );
         }
 
         if (! $activo) {
@@ -84,7 +99,7 @@ class UsuarioController extends Controller
             $usuario->tokens()->delete();
         }
 
-        return new UsuarioResource($usuario->load(['comercio', 'zona']));
+        return new UsuarioResource($usuario->load(self::RELACIONES));
     }
 
     /**
@@ -101,7 +116,7 @@ class UsuarioController extends Controller
             $usuario->tokens()->delete();
         }
 
-        return new UsuarioResource($usuario->load(['comercio', 'zona']));
+        return new UsuarioResource($usuario->load(self::RELACIONES));
     }
 
     /**

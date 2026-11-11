@@ -1,1 +1,15 @@
-/* You can add global styles to this file, and also import other style files */
+// Estilos globales de la web.
+//  1. estilos/_variables.scss  → la identidad (colores, tipografía, radios) como variables de Bootstrap.
+//  2. Bootstrap compilado con esas variables.
+//  3. estilos/_base.scss       → los pocos ajustes que Bootstrap no expone como variable.
+// La fuente Inter y Bootstrap Icons se cargan desde angular.json.
+
+@import 'bootstrap/scss/functions';
+@import './estilos/variables';
+@import 'bootstrap/scss/variables';
+
+// Agrega "acento" a los colores de tema (genera .btn-acento, .text-bg-acento, etc.).
+$theme-colors: map-merge($theme-colors, $custom-colors);
+
+@import 'bootstrap/scss/bootstrap';
+@import './estilos/base';

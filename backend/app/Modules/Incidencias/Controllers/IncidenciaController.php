@@ -19,7 +19,7 @@ class IncidenciaController extends Controller
 
         $incidencias = Incidencia::query()
             ->whereHas('pedido', fn ($query) => $query->visiblesPara($usuario))
-            ->with(['pedido', 'tipo', 'usuario'])
+            ->with(['pedido:id,numero', 'tipo:id,nombre', 'usuario:id,nombre'])
             ->latest('id')
             ->paginate(20);
 

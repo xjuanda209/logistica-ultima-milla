@@ -1,38 +1,25 @@
-<h1 class="h3 mb-3">Clientes</h1>
-
-@if (error(); as mensaje) {
-  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
-} @else if (cargando()) {
-  <p class="text-body-secondary">Cargando…</p>
-} @else if (clientes().length === 0) {
-  <p class="text-body-secondary">No hay clientes para mostrar.</p>
-} @else {
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Cédula</th>
-          <th>Teléfono</th>
-          <th>Dirección</th>
-          <th>Zona</th>
-          <th>Comercio</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (cliente of clientes(); track cliente.id) {
-          <tr>
-            <td class="fw-semibold">{{ cliente.nombre }}</td>
-            <td>{{ cliente.cedula }}</td>
-            <td>{{ cliente.telefono }}</td>
-            <td>{{ cliente.direccion }}, {{ cliente.barrio }}</td>
-            <td>{{ cliente.zona?.nombre }}</td>
-            <td>{{ cliente.comercio?.nombre }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <app-paginacion [meta]="meta()" (cambiar)="cargar($event)" />
-}
+<app-tarjeta>
+  <app-tabla
+    titulo="Clientes"
+    [columnas]="['Nombre', 'Cédula', 'Teléfono', 'Dirección', 'Zona', 'Comercio']"
+    [cargando]="cargando()"
+    [error]="error()"
+    [vacia]="clientes().length === 0"
+    textoVacio="No hay clientes para mostrar."
+    iconoVacio="bi-people"
+    [meta]="meta()"
+    (cambiarPagina)="cargar($event)"
+    (reintentar)="cargar(1)"
+  >
+    @for (cliente of clientes(); track cliente.id) {
+      <tr>
+        <td class="fw-semibold">{{ cliente.nombre }}</td>
+        <td>{{ cliente.cedula }}</td>
+        <td>{{ cliente.telefono }}</td>
+        <td>{{ cliente.direccion }}, {{ cliente.barrio }}</td>
+        <td>{{ cliente.zona?.nombre }}</td>
+        <td>{{ cliente.comercio?.nombre }}</td>
+      </tr>
+    }
+  </app-tabla>
+</app-tarjeta>

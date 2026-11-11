@@ -1,0 +1,78 @@
+// Ajustes globales que Bootstrap no expone como variable. Usan las variables y los mixins del tema,
+// nunca colores escritos a mano. Si algo se puede lograr con una clase de Bootstrap, va en la plantilla.
+
+body {
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11'; // variante de Inter: "1" con base recta
+}
+
+// Una tabla ancha dentro de una rejilla .d-grid se desplaza dentro de su tarjeta (.table-responsive)
+// en vez de ensanchar toda la página.
+.d-grid > * {
+  min-width: 0;
+}
+
+// Las cifras de tablas e indicadores se alinean en columnas.
+.table,
+.cifra {
+  font-variant-numeric: tabular-nums;
+}
+
+// Encabezados de tabla como en los mockups: MAYÚSCULAS, grises y pequeños, sobre un fondo apenas marcado.
+.table > thead > tr > th {
+  background-color: $gray-100;
+  color: $gray-600;
+  font-size: $small-font-size;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+// La última fila no duplica el borde inferior de la tarjeta que la contiene.
+.card .table > tbody > tr:last-child > td {
+  border-bottom-width: 0;
+}
+
+// Botón secundario de los mockups ("Editar", "Cancelar", "Cerrar sesión"): blanco, borde gris, texto oscuro.
+.btn-outline-secondary {
+  @include button-variant(
+    $background: $white,
+    $border: $gray-300,
+    $color: $gray-900,
+    $hover-background: $gray-100,
+    $hover-border: $gray-400,
+    $hover-color: $gray-900,
+    $active-background: $gray-200,
+    $active-border: $gray-400,
+    $active-color: $gray-900,
+    $disabled-background: $white,
+    $disabled-border: $gray-200,
+    $disabled-color: $gray-500
+  );
+}
+
+// Campo con error: borde rojo y fondo rosado muy suave (INT-01, INT-02).
+.form-control.is-invalid,
+.form-select.is-invalid {
+  background-color: mix($danger-bg-subtle, $white, 45%);
+}
+
+// Foco visible con teclado en enlaces y botones sin estilo propio.
+:focus-visible {
+  outline: 2px solid rgba($primary, 0.55);
+  outline-offset: 2px;
+}
+
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible,
+.btn:focus-visible {
+  outline: 0; // ya tienen el anillo de foco de Bootstrap
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder-glow .placeholder,
+  .placeholder-wave {
+    animation: none;
+  }
+}

@@ -6,11 +6,10 @@
   <div class="alert alert-danger mt-3" role="alert">{{ mensaje }}</div>
 } @else if (pedido(); as p) {
   <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-4">
-    <h1 class="h3 mb-0">Pedido {{ p.numero }}</h1>
-    <span class="badge" [class]="estados[p.estado].clase">{{ estados[p.estado].texto }}</span>
-    <span class="badge" [class]="prioridades[p.prioridad].clase">
-      Prioridad {{ prioridades[p.prioridad].texto }}
-    </span>
+    <h2 class="h1 mb-0">Pedido {{ p.numero }}</h2>
+    <app-badge-estado [valor]="p.estado" />
+    <span class="text-body-secondary">Prioridad</span>
+    <app-badge-estado tipo="prioridad" [valor]="p.prioridad" />
   </div>
 
   <div class="row g-3">
@@ -87,9 +86,7 @@
               <div class="d-flex justify-content-between gap-2">
                 <span>
                   @if (evento.estado_nuevo; as nuevo) {
-                    <span class="badge" [class]="estados[nuevo].clase">
-                      {{ estados[nuevo].texto }}
-                    </span>
+                    <app-badge-estado [valor]="nuevo" />
                   }
                   {{ evento.detalle }}
                 </span>
