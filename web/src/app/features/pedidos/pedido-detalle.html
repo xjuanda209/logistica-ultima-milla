@@ -20,7 +20,7 @@
   <div class="d-grid gap-4">
     <app-tarjeta>
       <div class="d-flex flex-wrap align-items-center gap-3">
-        <h2 class="h3 mb-0">Pedido {{ p.numero }}</h2>
+        <h2 class="fs-3 fw-bold mb-0">Pedido {{ p.numero }}</h2>
         <div class="d-flex flex-wrap align-items-center gap-2 me-auto">
           <app-badge-estado [valor]="p.estado" />
           <app-badge-estado tipo="prioridad" prefijo="Prioridad" [valor]="p.prioridad" />
@@ -85,7 +85,7 @@
         </app-tarjeta>
 
         <app-tarjeta titulo="Productos">
-          <div class="table-responsive">
+          <div class="overflow-x-auto overflow-y-hidden">
             <table class="table align-middle mb-0">
               <caption class="visually-hidden">
                 Productos del pedido
