@@ -13,6 +13,19 @@ use Illuminate\Validation\Rule;
 class PedidoController extends Controller
 {
     /**
+     * Relaciones que muestra PedidoResource, cargadas por adelantado (sin consultas N+1)
+     * y solo con las columnas que usa.
+     *
+     * @var list<string>
+     */
+    private const RELACIONES_LISTA = [
+        'comercio:id,nombre,direccion_recogida',
+        'cliente:id,nombre,telefono',
+        'repartidor:id,nombre',
+        'zona:id,nombre',
+    ];
+
+    /**
      * GET /api/pedidos — lista paginada. Cada rol ve solo lo que le corresponde
      * (ver Pedido::scopeVisiblesPara). Filtros opcionales: ?estado=en_ruta y ?numero=PED-00
      * (pedidos cuyo número contiene ese texto, sin distinguir mayúsculas).
@@ -28,7 +41,7 @@ class PedidoController extends Controller
             ->visiblesPara($request->user())
             ->when($filtros['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
             ->when($filtros['numero'] ?? null, fn ($query, string $numero) => $query->whereLike('numero', "%{$numero}%"))
-            ->with(['comercio', 'cliente', 'repartidor', 'zona'])
+            ->with(self::RELACIONES_LISTA)
             ->latest('id')
             ->paginate(20);
 
@@ -43,7 +56,11 @@ class PedidoController extends Controller
     {
         $pedido = Pedido::query()
             ->visiblesPara($request->user())
-            ->with(['comercio', 'cliente', 'repartidor', 'zona', 'lineas', 'historial.usuario'])
+            ->with([
+                ...self::RELACIONES_LISTA,
+                'lineas:id,pedido_id,producto,cantidad',
+                'historial.usuario:id,nombre',
+            ])
             ->findOrFail($id);
 
         return new PedidoResource($pedido);

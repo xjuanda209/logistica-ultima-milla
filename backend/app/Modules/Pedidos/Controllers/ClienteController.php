@@ -23,7 +23,7 @@ class ClienteController extends Controller
                 $usuario->rol === Rol::Comercio,
                 fn ($query) => $query->where('comercio_id', $usuario->comercio_id ?? 0),
             )
-            ->with(['comercio', 'zona'])
+            ->with(['comercio:id,nombre', 'zona:id,nombre'])
             ->orderBy('nombre')
             ->paginate(20);
 

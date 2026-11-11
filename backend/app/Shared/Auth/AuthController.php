@@ -49,6 +49,6 @@ class AuthController extends Controller
      */
     public function me(Request $request): UsuarioResource
     {
-        return new UsuarioResource($request->user()->load('comercio'));
+        return new UsuarioResource($request->user()->load('comercio:id,nombre'));
     }
 }

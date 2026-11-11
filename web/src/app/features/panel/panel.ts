@@ -1,10 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ApiService } from '../../core/api.service';
+import { CatalogosService } from '../../core/catalogos.service';
 import { ESTADOS_PEDIDO, mensajeDeError } from '../../core/etiquetas';
 import { MensajesService } from '../../core/mensajes.service';
-import { Comercio, EstadoPedido, Paginado, Pedido, Zona } from '../../core/modelos';
+import { Comercio, EstadoPedido, Pedido, Zona } from '../../core/modelos';
 import { BadgeEstado } from '../../shared/badge-estado';
 import { Barra, Barras } from '../../shared/barras';
 import { Indicador } from '../../shared/indicador';
@@ -37,7 +37,7 @@ export interface FiltrosPanel {
   templateUrl: './panel.html',
 })
 export class Panel implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly catalogos = inject(CatalogosService);
   private readonly mensajes = inject(MensajesService);
 
   protected readonly estados = Object.keys(ESTADOS_PEDIDO) as EstadoPedido[];
@@ -61,13 +61,13 @@ export class Panel implements OnInit {
   protected readonly pedidos = signal<(Pedido & { incidencia_abierta?: boolean })[]>([]);
 
   ngOnInit(): void {
-    this.api.get<Paginado<Zona>>('/zonas', { por_pagina: 100 }).subscribe({
-      next: (respuesta) => this.zonas.set(respuesta.data),
+    this.catalogos.zonas().subscribe({
+      next: (zonas) => this.zonas.set(zonas),
       error: (error: unknown) => this.mensajes.error(mensajeDeError(error)),
     });
 
-    this.api.get<Paginado<Comercio>>('/comercios', { por_pagina: 100 }).subscribe({
-      next: (respuesta) => this.comercios.set(respuesta.data),
+    this.catalogos.comercios().subscribe({
+      next: (comercios) => this.comercios.set(comercios),
       error: (error: unknown) => this.mensajes.error(mensajeDeError(error)),
     });
   }

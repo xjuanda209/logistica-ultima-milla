@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../core/api.service';
+import { CatalogosService } from '../../core/catalogos.service';
 import {
   ErroresDeCampos,
   camposDeError,
@@ -28,6 +29,7 @@ import { Tarjeta } from '../../shared/tarjeta';
 })
 export class Zonas implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly catalogos = inject(CatalogosService);
   private readonly mensajes = inject(MensajesService);
 
   protected readonly columnas: Columna[] = [
@@ -98,6 +100,7 @@ export class Zonas implements OnInit {
       next: (respuesta) => {
         this.guardando.set(false);
         this.modalAbierto.set(false);
+        this.catalogos.invalidar('zonas'); // los <select> de zonas deben ver el cambio
         this.mensajes.exito(
           `Zona ${respuesta.data.nombre} ${zona ? 'actualizada' : 'creada'} correctamente.`,
         );

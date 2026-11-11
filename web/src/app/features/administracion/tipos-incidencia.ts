@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../core/api.service';
+import { CatalogosService } from '../../core/catalogos.service';
 import {
   ErroresDeCampos,
   camposDeError,
@@ -26,6 +27,7 @@ import { Tarjeta } from '../../shared/tarjeta';
 })
 export class TiposIncidencia implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly catalogos = inject(CatalogosService);
   private readonly mensajes = inject(MensajesService);
 
   protected readonly columnas: Columna[] = [
@@ -97,6 +99,7 @@ export class TiposIncidencia implements OnInit {
       next: (respuesta) => {
         this.guardando.set(false);
         this.modalAbierto.set(false);
+        this.catalogos.invalidar('tipos-incidencia');
         this.mensajes.exito(
           `Tipo ${respuesta.data.nombre} ${tipo ? 'actualizado' : 'creado'} correctamente.`,
         );
@@ -122,6 +125,7 @@ export class TiposIncidencia implements OnInit {
           const actualizado = respuesta.data;
 
           this.cambiandoEstado.set(null);
+          this.catalogos.invalidar('tipos-incidencia');
           this.datos.update((tipos) =>
             tipos.map((t) => (t.id === actualizado.id ? actualizado : t)),
           );

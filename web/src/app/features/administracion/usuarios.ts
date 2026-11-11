@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { CatalogosService } from '../../core/catalogos.service';
 import {
   ErroresDeCampos,
   ROLES,
@@ -50,6 +51,7 @@ const REGLAS_DE_USUARIOS = [
 export class Usuarios implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly catalogos = inject(CatalogosService);
   private readonly mensajes = inject(MensajesService);
   private readonly injector = inject(Injector);
 
@@ -108,15 +110,15 @@ export class Usuarios implements OnInit {
     });
   }
 
-  /** Comercios y zonas para los <select>. por_pagina=100 trae el catálogo completo. */
+  /** Comercios y zonas para los <select>, desde los catálogos en memoria. */
   private cargarOpciones(): void {
-    this.api.get<Paginado<Comercio>>('/comercios', { por_pagina: 100 }).subscribe({
-      next: (respuesta) => this.comercios.set(respuesta.data),
+    this.catalogos.comercios().subscribe({
+      next: (comercios) => this.comercios.set(comercios),
       error: (error: unknown) => this.mensajes.error(mensajeDeError(error)),
     });
 
-    this.api.get<Paginado<Zona>>('/zonas', { por_pagina: 100 }).subscribe({
-      next: (respuesta) => this.zonas.set(respuesta.data),
+    this.catalogos.zonas().subscribe({
+      next: (zonas) => this.zonas.set(zonas),
       error: (error: unknown) => this.mensajes.error(mensajeDeError(error)),
     });
   }
