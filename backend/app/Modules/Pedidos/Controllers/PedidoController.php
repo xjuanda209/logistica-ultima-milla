@@ -9,6 +9,7 @@ use App\Modules\Pedidos\Models\Pedido;
 use App\Modules\Pedidos\Requests\GuardarPedidoRequest;
 use App\Modules\Pedidos\Resources\PedidoResource;
 use App\Shared\Enums\Canal;
+use App\Shared\Enums\EstadoIncidencia;
 use App\Shared\Enums\EstadoPedido;
 use App\Shared\Enums\TipoEvento;
 use App\Shared\Errores\ErrorApi;
@@ -51,21 +52,37 @@ class PedidoController extends Controller
 
     /**
      * GET /api/pedidos — lista paginada. Cada rol ve solo lo que le corresponde
-     * (ver Pedido::scopeVisiblesPara). Filtros opcionales: ?estado=en_ruta y ?numero=PED-00
-     * (pedidos cuyo número contiene ese texto, sin distinguir mayúsculas).
+     * (ver Pedido::scopeVisiblesPara), del más reciente al más antiguo. Filtros opcionales:
+     *   ?estado=en_ruta
+     *   ?numero=P-0001      pedidos cuyo número contiene ese texto, sin distinguir mayúsculas
+     *   ?zona_id=2
+     *   ?desde= y ?hasta=   rango de la fecha de creación, ambos incluidos. Son instantes (fecha y
+     *                       hora, idealmente en ISO con zona horaria): la web manda el inicio y el
+     *                       fin del día en la hora local del usuario.
+     * Cada pedido trae "incidencia_abierta" (si tiene alguna incidencia en estado abierta).
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $filtros = $request->validate([
             'estado' => ['nullable', Rule::enum(EstadoPedido::class)],
             'numero' => ['nullable', 'string', 'max:20'],
+            'zona_id' => ['nullable', 'integer'],
+            'desde' => ['nullable', 'date'],
+            'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
+        ], [
+            'hasta.after_or_equal' => 'La fecha hasta no puede ser anterior a la fecha desde.',
         ]);
 
         $pedidos = Pedido::query()
             ->visiblesPara($request->user())
             ->when($filtros['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
             ->when($filtros['numero'] ?? null, fn ($query, string $numero) => $query->whereLike('numero', "%{$numero}%"))
+            ->when($filtros['zona_id'] ?? null, fn ($query, $zonaId) => $query->where('zona_id', $zonaId))
+            ->when($filtros['desde'] ?? null, fn ($query, string $desde) => $query->where('created_at', '>=', Carbon::parse($desde)->utc()))
+            ->when($filtros['hasta'] ?? null, fn ($query, string $hasta) => $query->where('created_at', '<=', Carbon::parse($hasta)->utc()))
             ->with(self::RELACIONES_LISTA)
+            ->withExists(['incidencias as incidencia_abierta' => fn ($query) => $query->where('estado', EstadoIncidencia::Abierta)])
+            ->latest()
             ->latest('id')
             ->paginate(20);
 

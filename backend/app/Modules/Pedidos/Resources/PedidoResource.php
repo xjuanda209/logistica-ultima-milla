@@ -40,6 +40,7 @@ class PedidoResource extends JsonResource
             'zona_id' => $this->zona_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'incidencia_abierta' => $this->whenHas('incidencia_abierta', fn (): bool => (bool) $this->incidencia_abierta),
             'creado_por' => $this->whenLoaded('creador', fn (): ?string => $this->creador?->nombre),
             'comercio' => $this->whenLoaded('comercio', fn (): array => [
                 'id' => $this->comercio->id,
