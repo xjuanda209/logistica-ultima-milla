@@ -1,9 +1,9 @@
-// Ajustes globales que Bootstrap no expone como variable. Usan las variables del tema,
+// Ajustes globales que Bootstrap no expone como variable. Usan las variables y los mixins del tema,
 // nunca colores escritos a mano. Si algo se puede lograr con una clase de Bootstrap, va en la plantilla.
 
 body {
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: 'cv11', 'ss01'; // variantes de Inter: "1" recto y dígitos abiertos
+  font-feature-settings: 'cv11'; // variante de Inter: "1" con base recta
 }
 
 // Las cifras de tablas e indicadores se alinean en columnas.
@@ -12,17 +12,43 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-// Encabezado de tabla discreto: texto pequeño y gris sobre un fondo apenas marcado.
+// Encabezados de tabla como en los mockups: MAYÚSCULAS, grises y pequeños, sobre un fondo apenas marcado.
 .table > thead > tr > th {
   background-color: $gray-100;
   color: $gray-600;
   font-size: $small-font-size;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-// Dentro de una tarjeta, la última fila no duplica el borde inferior de la tarjeta.
-.card > .table-responsive > .table > tbody > tr:last-child > td {
+// La última fila no duplica el borde inferior de la tarjeta que la contiene.
+.card .table > tbody > tr:last-child > td {
   border-bottom-width: 0;
+}
+
+// Botón secundario de los mockups ("Editar", "Cancelar", "Cerrar sesión"): blanco, borde gris, texto oscuro.
+.btn-outline-secondary {
+  @include button-variant(
+    $background: $white,
+    $border: $gray-300,
+    $color: $gray-900,
+    $hover-background: $gray-100,
+    $hover-border: $gray-400,
+    $hover-color: $gray-900,
+    $active-background: $gray-200,
+    $active-border: $gray-400,
+    $active-color: $gray-900,
+    $disabled-background: $white,
+    $disabled-border: $gray-200,
+    $disabled-color: $gray-500
+  );
+}
+
+// Campo con error: borde rojo y fondo rosado muy suave (INT-01, INT-02).
+.form-control.is-invalid,
+.form-select.is-invalid {
+  background-color: mix($danger-bg-subtle, $white, 45%);
 }
 
 // Foco visible con teclado en enlaces y botones sin estilo propio.
@@ -33,6 +59,7 @@ body {
 
 .form-control:focus-visible,
 .form-select:focus-visible,
+.form-check-input:focus-visible,
 .btn:focus-visible {
   outline: 0; // ya tienen el anillo de foco de Bootstrap
 }
