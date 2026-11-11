@@ -15,13 +15,16 @@ use App\Shared\Enums\TipoEvento;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Datos de demostración del módulo de Clientes y Pedidos: 8 clientes repartidos entre los
- * comercios y 12 pedidos en estado "creado" (P-000001 a P-000012), con productos e historial.
+ * comercios y 12 pedidos en estado "creado", con productos e historial. Los pedidos toman los
+ * números que siguen en la secuencia (si el último es PED-0020, serán PED-0021 a PED-0032).
  *
- * Es idempotente y solo agrega: usa firstOrCreate, no borra ni modifica nada. Si un cliente
- * (comercio + cédula) o un número de pedido ya existe, lo deja como está.
+ * Es idempotente y solo agrega: no borra ni modifica nada. Los clientes se crean con firstOrCreate
+ * (comercio + cédula); los pedidos solo se crean si los clientes de demostración todavía no tienen
+ * ninguno, así que repetirlo no duplica nada y no depende de números fijos.
  * No forma parte de DatabaseSeeder; se ejecuta aparte:
  *
  *   php artisan db:seed --class=DemoPedidosSeeder
@@ -63,55 +66,71 @@ class DemoPedidosSeeder extends Seeder
             return;
         }
 
-        $clientes = $this->crearClientes($comercios, $zonas);
+        // Todo o nada: si algo falla a mitad de camino no quedan pedidos a medias.
+        DB::transaction(function () use ($comercios, $zonas, $operador): void {
+            $clientes = $this->crearClientes($comercios, $zonas);
 
-        for ($i = 1; $i <= self::CANTIDAD_DE_PEDIDOS; $i++) {
-            $cliente = $clientes[($i - 1) % count($clientes)];
-            $creador = $comercios->firstWhere('id', $cliente->comercio_id)?->usuarios->first() ?? $operador;
-            // Creados en los últimos días (el 12 es el más reciente) y con la entrega para mañana o pasado.
-            $creado = Carbon::now()->subHours(6 * (self::CANTIDAD_DE_PEDIDOS - $i) + 1)->startOfMinute();
-            $inicio = Carbon::tomorrow()->addDays($i % 2)->setTime(8 + $i % 9, 0);
+            $yaTienenPedidos = Pedido::query()
+                ->whereIn('cliente_id', array_map(fn (Cliente $cliente): int => $cliente->id, $clientes))
+                ->exists();
 
-            $pedido = Pedido::query()->firstOrCreate(
-                ['numero' => sprintf('P-%06d', $i)],
-                [
-                    'comercio_id' => $cliente->comercio_id,
-                    'cliente_id' => $cliente->id,
-                    'repartidor_id' => null,
-                    'creado_por' => $creador->id,
-                    'estado' => EstadoPedido::Creado,
-                    'prioridad' => Prioridad::cases()[$i % 3],
-                    'direccion' => $cliente->direccion,
-                    'barrio' => $cliente->barrio,
-                    'indicaciones' => $cliente->indicaciones,
-                    'zona_id' => $cliente->zona_id,
-                    'franja_inicio' => $inicio,
-                    'franja_fin' => $inicio->copy()->addHours(2),
-                    'observaciones' => self::OBSERVACIONES[$i % 4],
-                ],
-            );
+            if ($yaTienenPedidos) {
+                $this->command?->info('Los clientes de demostración ya tienen pedidos: no se crean más.');
 
-            if (! $pedido->wasRecentlyCreated) {
-                continue;
+                return;
             }
 
-            $pedido->forceFill(['created_at' => $creado, 'updated_at' => $creado])->save();
+            for ($i = 1; $i <= self::CANTIDAD_DE_PEDIDOS; $i++) {
+                $cliente = $clientes[($i - 1) % count($clientes)];
+                $creador = $comercios->firstWhere('id', $cliente->comercio_id)?->usuarios->first() ?? $operador;
 
-            $pedido->lineas()->createMany([
-                ['producto' => self::PRODUCTOS[$i % 8], 'cantidad' => 1 + $i % 3],
-                ['producto' => self::PRODUCTOS[($i + 3) % 8], 'cantidad' => 1],
-            ]);
+                $this->crearPedido($i, $cliente, $creador);
+            }
+        });
+    }
 
-            $pedido->historial()->create([
-                'usuario_id' => $creador->id,
-                'tipo_evento' => TipoEvento::Creacion,
-                'estado_anterior' => null,
-                'estado_nuevo' => EstadoPedido::Creado,
-                'detalle' => 'Pedido creado',
-                'canal' => Canal::Web,
-                'created_at' => $creado,
-            ]);
-        }
+    /**
+     * Crea el pedido número $i de la demostración, con el siguiente número libre de la secuencia.
+     */
+    private function crearPedido(int $i, Cliente $cliente, Usuario $creador): void
+    {
+        // Creados en los últimos días (el último es el más reciente) y con la entrega para mañana o pasado.
+        $creado = Carbon::now()->subHours(6 * (self::CANTIDAD_DE_PEDIDOS - $i) + 1)->startOfMinute();
+        $inicio = Carbon::tomorrow()->addDays($i % 2)->setTime(8 + $i % 9, 0);
+
+        $pedido = Pedido::query()->create([
+            'numero' => Pedido::siguienteNumero(),
+            'comercio_id' => $cliente->comercio_id,
+            'cliente_id' => $cliente->id,
+            'repartidor_id' => null,
+            'creado_por' => $creador->id,
+            'estado' => EstadoPedido::Creado,
+            'prioridad' => Prioridad::cases()[$i % 3],
+            'direccion' => $cliente->direccion,
+            'barrio' => $cliente->barrio,
+            'indicaciones' => $cliente->indicaciones,
+            'zona_id' => $cliente->zona_id,
+            'franja_inicio' => $inicio,
+            'franja_fin' => $inicio->copy()->addHours(2),
+            'observaciones' => self::OBSERVACIONES[$i % 4],
+        ]);
+
+        $pedido->forceFill(['created_at' => $creado, 'updated_at' => $creado])->save();
+
+        $pedido->lineas()->createMany([
+            ['producto' => self::PRODUCTOS[$i % 8], 'cantidad' => 1 + $i % 3],
+            ['producto' => self::PRODUCTOS[($i + 3) % 8], 'cantidad' => 1],
+        ]);
+
+        $pedido->historial()->create([
+            'usuario_id' => $creador->id,
+            'tipo_evento' => TipoEvento::Creacion,
+            'estado_anterior' => null,
+            'estado_nuevo' => EstadoPedido::Creado,
+            'detalle' => 'Pedido creado',
+            'canal' => Canal::Web,
+            'created_at' => $creado,
+        ]);
     }
 
     /**
@@ -126,18 +145,23 @@ class DemoPedidosSeeder extends Seeder
         $clientes = [];
 
         foreach (self::CLIENTES as $indice => [$nombre, $cedula, $telefono, $direccion, $barrio, $indicaciones]) {
-            $clientes[] = Cliente::query()->firstOrCreate(
-                ['comercio_id' => $comercios[$indice % $comercios->count()]->id, 'cedula' => $cedula],
-                [
-                    'nombre' => $nombre,
-                    'telefono' => $telefono,
-                    'correo' => 'demo'.($indice + 1).'@correo.test',
-                    'direccion' => $direccion,
-                    'barrio' => $barrio,
-                    'indicaciones' => $indicaciones,
-                    'zona_id' => $zonas[$indice % $zonas->count()]->id,
-                ],
-            );
+            $correo = 'demo'.($indice + 1).'@correo.test';
+
+            // Si ya se sembró antes se reutiliza, esté en el comercio que esté: así, aunque después
+            // se agreguen comercios (y cambie el reparto), no se crea el mismo cliente dos veces.
+            $clientes[] = Cliente::query()->where('cedula', $cedula)->where('correo', $correo)->first()
+                ?? Cliente::query()->firstOrCreate(
+                    ['comercio_id' => $comercios[$indice % $comercios->count()]->id, 'cedula' => $cedula],
+                    [
+                        'nombre' => $nombre,
+                        'telefono' => $telefono,
+                        'correo' => $correo,
+                        'direccion' => $direccion,
+                        'barrio' => $barrio,
+                        'indicaciones' => $indicaciones,
+                        'zona_id' => $zonas[$indice % $zonas->count()]->id,
+                    ],
+                );
         }
 
         return $clientes;

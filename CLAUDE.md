@@ -117,7 +117,7 @@ Todo cambio de estado de un pedido debe insertar una fila en `historial_pedido` 
 El canal del evento sale de `Canal::deLaPeticion($request)`: la app móvil manda el encabezado `X-Canal: movil`;
 sin encabezado es `web`. En un evento `edicion` el `detalle` es un JSON con los campos cambiados
 (`HistorialPedido::cambios()`); en los demás eventos es texto libre.
-El número del pedido (`P-000001`) lo genera `Pedido::siguienteNumero()`; ver `PedidoController::store`.
+El número del pedido (`PED-0021`: continúa después del más alto que exista) lo genera `Pedido::siguienteNumero()`; ver `PedidoController::store`.
 
 ## Web (`web/src/app`)
 

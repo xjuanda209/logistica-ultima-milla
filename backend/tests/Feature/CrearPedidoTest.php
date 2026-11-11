@@ -55,7 +55,7 @@ test('se crea un pedido en estado creado con la dirección copiada del cliente',
 
     $respuesta = $this->postJson('/api/pedidos', datosPedido())
         ->assertCreated()
-        ->assertJsonPath('data.numero', 'P-000001')
+        ->assertJsonPath('data.numero', 'PED-0001')
         ->assertJsonPath('data.estado', 'creado')
         ->assertJsonPath('data.prioridad', 'media')
         ->assertJsonPath('data.direccion', 'Cra 8 # 20-15, apto 301')
@@ -101,22 +101,43 @@ test('al crear un pedido se registra el evento de creación con el usuario y el 
     'móvil' => ['movil', Canal::Movil],
 ]);
 
-test('el número del pedido lo genera el sistema, consecutivo y con el formato P-000001', function () {
+test('el primer pedido del sistema es el PED-0001', function () {
+    Sanctum::actingAs($this->operador);
+
+    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'PED-0001');
+    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'PED-0002');
+});
+
+test('el número lo genera el sistema y continúa después del más alto que exista', function () {
     Sanctum::actingAs($this->operador);
     Pedido::factory()->create(['numero' => 'PED-0020']);
+    Pedido::factory()->create(['numero' => 'PED-0007']);
 
     $this->postJson('/api/pedidos', datosPedido(['numero' => 'MI-NUMERO']))
         ->assertCreated()
-        ->assertJsonPath('data.numero', 'P-000001');
+        ->assertJsonPath('data.numero', 'PED-0021');
 
-    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'P-000002');
-
-    Pedido::factory()->create(['numero' => 'P-000041']);
-
-    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'P-000042');
+    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'PED-0022');
 
     expect(Pedido::query()->distinct()->count('numero'))->toBe(Pedido::query()->count());
 });
+
+test('el consecutivo sigue creciendo después de PED-9999 sin chocar con números existentes', function () {
+    Sanctum::actingAs($this->operador);
+    Pedido::factory()->create(['numero' => 'PED-9999']);
+    Pedido::factory()->create(['numero' => 'PED-0500']);
+
+    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'PED-10000');
+    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'PED-10001');
+});
+
+test('los números que no son consecutivos del sistema no alteran la secuencia', function (string $ajeno) {
+    Sanctum::actingAs($this->operador);
+    Pedido::factory()->create(['numero' => 'PED-0020']);
+    Pedido::factory()->create(['numero' => $ajeno]);
+
+    $this->postJson('/api/pedidos', datosPedido())->assertCreated()->assertJsonPath('data.numero', 'PED-0021');
+})->with(['P-000041', 'PED-MANUAL', 'PED-0099X', 'OTRO-5000']);
 
 test('el pedido conserva su dirección aunque después cambie la del cliente', function () {
     Sanctum::actingAs($this->operador);

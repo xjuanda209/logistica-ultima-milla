@@ -127,11 +127,11 @@ test('los filtros se pueden combinar', function () {
     Sanctum::actingAs($this->operador);
     $zona = Zona::factory()->create();
     $repartidor = Usuario::factory()->repartidor()->create();
-    $buscado = Pedido::factory()->asignadoA($repartidor)->create(['zona_id' => $zona->id, 'numero' => 'P-000007']);
-    Pedido::factory()->create(['zona_id' => $zona->id, 'numero' => 'P-000008']);
-    Pedido::factory()->asignadoA($repartidor)->create(['numero' => 'P-000009']);
+    $buscado = Pedido::factory()->asignadoA($repartidor)->create(['zona_id' => $zona->id, 'numero' => 'PED-0007']);
+    Pedido::factory()->create(['zona_id' => $zona->id, 'numero' => 'PED-0008']);
+    Pedido::factory()->asignadoA($repartidor)->create(['numero' => 'PED-0009']);
 
-    $this->getJson("/api/pedidos?estado=asignado&zona_id={$zona->id}&numero=p-0000")
+    $this->getJson("/api/pedidos?estado=asignado&zona_id={$zona->id}&numero=ped-000")
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $buscado->id);
@@ -140,21 +140,21 @@ test('los filtros se pueden combinar', function () {
 test('un comercio no ve pedidos ajenos con ningún filtro', function () {
     $miComercio = Comercio::factory()->create();
     $zona = Zona::factory()->create();
-    $propio = Pedido::factory()->create(['comercio_id' => $miComercio->id, 'zona_id' => $zona->id, 'numero' => 'P-000001']);
-    Pedido::factory()->create(['zona_id' => $zona->id, 'numero' => 'P-000002']);
+    $propio = Pedido::factory()->create(['comercio_id' => $miComercio->id, 'zona_id' => $zona->id, 'numero' => 'PED-0001']);
+    Pedido::factory()->create(['zona_id' => $zona->id, 'numero' => 'PED-0002']);
 
     Sanctum::actingAs(Usuario::factory()->comercio($miComercio)->create());
 
     $desde = urlencode(now()->subDay()->toIso8601String());
 
-    foreach (["zona_id={$zona->id}", "desde={$desde}", 'estado=creado', 'numero=P-00000'] as $filtro) {
+    foreach (["zona_id={$zona->id}", "desde={$desde}", 'estado=creado', 'numero=PED-000'] as $filtro) {
         $this->getJson("/api/pedidos?{$filtro}")
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $propio->id);
     }
 
-    $this->getJson('/api/pedidos?numero=P-000002')->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson('/api/pedidos?numero=PED-0002')->assertOk()->assertJsonCount(0, 'data');
 });
 
 test('la lista de pedidos responde 401 sin token', function () {

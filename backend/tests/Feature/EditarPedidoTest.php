@@ -167,7 +167,7 @@ test('al editar no se puede cambiar el comercio, el cliente, el número ni el es
         'prioridad' => 'baja',
         'comercio_id' => $otroComercio->id,
         'cliente_id' => 9999,
-        'numero' => 'P-999999',
+        'numero' => 'PED-9999',
         'estado' => 'entregado',
         'direccion' => 'Otra dirección',
     ]))->assertOk();

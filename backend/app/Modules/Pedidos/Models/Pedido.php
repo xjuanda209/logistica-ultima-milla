@@ -29,6 +29,9 @@ class Pedido extends Model
     /** @use HasFactory<PedidoFactory> */
     use HasFactory;
 
+    /** Los números de pedido son PED- más un consecutivo de al menos 4 cifras: PED-0001. */
+    public const PREFIJO_NUMERO = 'PED-';
+
     protected $table = 'pedidos';
 
     /**
@@ -64,15 +67,31 @@ class Pedido extends Model
     }
 
     /**
-     * Número del próximo pedido, con el formato P-000001: el consecutivo más alto que exista más uno.
+     * Número del próximo pedido, con el formato PED-0001: continúa después del consecutivo más
+     * alto que exista (si el último es PED-0020, devuelve PED-0021; después de PED-9999, PED-10000).
      * El número es único en la base: si dos personas crean un pedido a la vez, quien lo use de
      * segundo recibe un error de duplicado y debe pedir otro (ver PedidoController::store).
      */
     public static function siguienteNumero(): string
     {
-        $ultimo = self::query()->where('numero', 'like', 'P-______')->max('numero');
+        // Se comparan como números, no como texto: PED-10000 va después de PED-9999.
+        $ultimo = self::query()
+            ->where('numero', 'like', self::PREFIJO_NUMERO.'%')
+            ->pluck('numero')
+            ->map(fn (string $numero): int => self::consecutivoDe($numero))
+            ->max();
 
-        return sprintf('P-%06d', (int) substr((string) $ultimo, 2) + 1);
+        return sprintf('%s%04d', self::PREFIJO_NUMERO, ($ultimo ?? 0) + 1);
+    }
+
+    /**
+     * "PED-0020" → 20. Un número que no sea un consecutivo del sistema cuenta como 0.
+     */
+    private static function consecutivoDe(string $numero): int
+    {
+        $cifras = substr($numero, strlen(self::PREFIJO_NUMERO));
+
+        return ctype_digit($cifras) ? (int) $cifras : 0;
     }
 
     /**

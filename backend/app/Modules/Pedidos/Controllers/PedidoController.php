@@ -90,7 +90,7 @@ class PedidoController extends Controller
     }
 
     /**
-     * POST /api/pedidos — crea el pedido en estado "creado". El sistema pone el número (P-000001),
+     * POST /api/pedidos — crea el pedido en estado "creado". El sistema pone el número (PED-0021),
      * copia al pedido la dirección que el cliente tiene en ese momento y registra el evento
      * "creacion" en el historial.
      */
