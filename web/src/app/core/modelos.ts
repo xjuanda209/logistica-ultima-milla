@@ -115,6 +115,8 @@ export interface Pedido {
 
 export interface Cliente {
   id: number;
+  comercio_id: number;
+  zona_id: number;
   nombre: string;
   cedula: string;
   telefono: string;
