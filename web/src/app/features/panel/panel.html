@@ -1,31 +1,133 @@
-@if (cargando()) {
-  <p class="text-body-secondary">Cargando…</p>
-} @else if (error(); as mensaje) {
-  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
-} @else if (resumen(); as datos) {
-  <div class="row g-3">
-    <div class="col-sm-6 col-lg-3">
-      <a class="card h-100 text-decoration-none border-primary" routerLink="/pedidos">
-        <div class="card-body">
-          <div class="text-body-secondary small">Total de pedidos</div>
-          <div class="display-6 fw-semibold">{{ datos.total }}</div>
+<div class="d-grid gap-4">
+  <app-tarjeta>
+    <form class="row g-3 align-items-end" (ngSubmit)="aplicar()">
+      <div class="col-sm-6 col-lg">
+        <label for="filtro-desde" class="form-label">Desde</label>
+        <input
+          id="filtro-desde"
+          name="desde"
+          type="date"
+          class="form-control"
+          [(ngModel)]="filtros.desde"
+        />
+      </div>
+      <div class="col-sm-6 col-lg">
+        <label for="filtro-hasta" class="form-label">Hasta</label>
+        <input
+          id="filtro-hasta"
+          name="hasta"
+          type="date"
+          class="form-control"
+          [(ngModel)]="filtros.hasta"
+        />
+      </div>
+      <div class="col-sm-6 col-lg">
+        <label for="filtro-zona" class="form-label">Zona</label>
+        <select id="filtro-zona" name="zona_id" class="form-select" [(ngModel)]="filtros.zona_id">
+          <option [ngValue]="null">Todas</option>
+          @for (zona of zonas(); track zona.id) {
+            <option [ngValue]="zona.id">{{ zona.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-sm-6 col-lg">
+        <label for="filtro-comercio" class="form-label">Comercio</label>
+        <select
+          id="filtro-comercio"
+          name="comercio_id"
+          class="form-select"
+          [(ngModel)]="filtros.comercio_id"
+        >
+          <option [ngValue]="null">Todos</option>
+          @for (comercio of comercios(); track comercio.id) {
+            <option [ngValue]="comercio.id">{{ comercio.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-sm-6 col-lg">
+        <label for="filtro-estado" class="form-label">Estado</label>
+        <select id="filtro-estado" name="estado" class="form-select" [(ngModel)]="filtros.estado">
+          <option [ngValue]="null">Todos</option>
+          @for (estado of estados; track estado) {
+            <option [ngValue]="estado">{{ nombresEstado[estado].texto }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-sm-6 col-lg-auto">
+        <button type="submit" class="btn btn-primary w-100">Aplicar</button>
+      </div>
+    </form>
+  </app-tarjeta>
+
+  <div class="row g-4">
+    <div class="col-xl-8 d-grid gap-4 align-content-start">
+      <app-tarjeta titulo="Pedidos por estado">
+        <ul class="list-unstyled d-flex flex-wrap justify-content-between gap-3 mb-0">
+          @for (estado of estados; track estado) {
+            <li class="text-center">
+              <div class="fs-2 fw-bold cifra" [class.text-body-secondary]="!conteos()">
+                {{ conteos()?.[estado] ?? '—' }}
+              </div>
+              <app-badge-estado [valor]="estado" />
+            </li>
+          }
+        </ul>
+        @if (!conteos()) {
+          <p class="small text-body-secondary text-center mt-3 mb-0">Sin datos para el periodo.</p>
+        }
+      </app-tarjeta>
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <app-indicador etiqueta="Entregas exitosas" [valor]="porcentajeExito()" />
         </div>
-      </a>
+        <div class="col-md-6">
+          <app-indicador etiqueta="Tiempo promedio de entrega" [valor]="tiempoPromedio()" />
+        </div>
+      </div>
+
+      <app-tarjeta titulo="Pedidos">
+        <span acciones class="small fw-semibold text-body-secondary">
+          <i class="bi bi-exclamation-triangle-fill text-danger" aria-hidden="true"></i>
+          = incidencia abierta
+        </span>
+
+        <app-tabla
+          titulo="Pedidos del periodo"
+          [columnas]="columnasPedidos"
+          [vacia]="pedidos().length === 0"
+          textoVacio="Sin datos"
+          detalleVacio="Aquí aparecerán los pedidos del periodo filtrado."
+          iconoVacio="bi-box-seam"
+        >
+          @for (pedido of pedidos(); track pedido.id) {
+            <tr>
+              <td>{{ pedido.numero }}</td>
+              <td>{{ pedido.comercio?.nombre }}</td>
+              <td>{{ pedido.zona?.nombre }}</td>
+              <td><app-badge-estado [valor]="pedido.estado" /></td>
+              <td class="text-end">
+                @if (pedido.incidencia_abierta) {
+                  <i class="bi bi-exclamation-triangle-fill text-danger" aria-hidden="true"></i>
+                  <span class="visually-hidden">Incidencia abierta</span>
+                }
+              </td>
+            </tr>
+          }
+        </app-tabla>
+      </app-tarjeta>
     </div>
 
-    @for (tarjeta of tarjetas(); track tarjeta.estado) {
-      <div class="col-sm-6 col-lg-3">
-        <a
-          class="card h-100 text-decoration-none"
-          routerLink="/pedidos"
-          [queryParams]="{ estado: tarjeta.estado }"
-        >
-          <div class="card-body">
-            <app-badge-estado class="d-block mb-2" [valor]="tarjeta.estado" />
-            <div class="display-6 fw-semibold">{{ tarjeta.cantidad }}</div>
-          </div>
-        </a>
-      </div>
-    }
+    <div class="col-xl-4 d-grid gap-4 align-content-start">
+      <app-tarjeta titulo="Incidencias por tipo">
+        <app-barras [datos]="incidenciasPorTipo()" />
+      </app-tarjeta>
+      <app-tarjeta titulo="Incidencias por zona">
+        <app-barras [datos]="incidenciasPorZona()" />
+      </app-tarjeta>
+      <app-tarjeta titulo="Incidencias por repartidor">
+        <app-barras [datos]="incidenciasPorRepartidor()" />
+      </app-tarjeta>
+    </div>
   </div>
-}
+</div>
