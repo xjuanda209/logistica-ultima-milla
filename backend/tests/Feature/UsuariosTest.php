@@ -333,8 +333,9 @@ test('un usuario desactivado no puede iniciar sesión y sus tokens dejan de serv
         ->assertJsonPath('error.codigo', 'NO_AUTENTICADO');
 
     $this->postJson('/api/login', $credenciales)
-        ->assertForbidden()
-        ->assertJsonPath('error.codigo', 'USUARIO_INACTIVO');
+        ->assertUnauthorized()
+        ->assertJsonPath('error.codigo', 'CREDENCIALES_INVALIDAS')
+        ->assertJsonPath('error.mensaje', 'Correo o contraseña incorrectos.');
 
     expect($usuario->tokens()->count())->toBe(0);
 });

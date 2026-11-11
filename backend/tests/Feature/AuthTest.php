@@ -29,13 +29,27 @@ test('el login rechaza una contraseña incorrecta con el formato de error del pr
         ->assertJsonStructure(['error' => ['codigo', 'mensaje', 'campos']]);
 });
 
-test('el login rechaza a un usuario inactivo', function () {
+test('el login responde el mismo mensaje único para correo inexistente, contraseña incorrecta y cuenta desactivada', function (array $credenciales) {
+    Usuario::factory()->create(['correo' => 'activo@prueba.test']);
     Usuario::factory()->inactivo()->create(['correo' => 'inactivo@prueba.test']);
 
-    $this->postJson('/api/login', ['correo' => 'inactivo@prueba.test', 'password' => 'password'])
-        ->assertForbidden()
-        ->assertJsonPath('error.codigo', 'USUARIO_INACTIVO');
-});
+    $this->postJson('/api/login', $credenciales)
+        ->assertUnauthorized()
+        ->assertExactJson([
+            'error' => [
+                'codigo' => 'CREDENCIALES_INVALIDAS',
+                'mensaje' => 'Correo o contraseña incorrectos.',
+                'campos' => [],
+            ],
+        ]);
+
+    expect(PersonalAccessToken::query()->count())->toBe(0);
+})->with([
+    'correo inexistente' => [['correo' => 'nadie@prueba.test', 'password' => 'password']],
+    'contraseña incorrecta' => [['correo' => 'activo@prueba.test', 'password' => 'incorrecta']],
+    'cuenta desactivada' => [['correo' => 'inactivo@prueba.test', 'password' => 'password']],
+    'desactivada y contraseña incorrecta' => [['correo' => 'inactivo@prueba.test', 'password' => 'incorrecta']],
+]);
 
 test('el login valida los campos obligatorios e indica cuáles fallaron', function () {
     $this->postJson('/api/login', ['correo' => 'no-es-un-correo'])

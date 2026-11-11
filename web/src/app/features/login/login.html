@@ -1,16 +1,24 @@
-<main class="min-vh-100 d-flex align-items-center justify-content-center bg-body-tertiary p-3">
-  <div class="card shadow-sm w-100" style="max-width: 400px">
-    <div class="card-body p-4">
-      <h1 class="h4 mb-1">Logística de Última Milla</h1>
-      <p class="text-body-secondary mb-4">Inicia sesión para continuar</p>
+<main class="acceso">
+  <div class="card acceso__tarjeta">
+    <div class="card-body p-4 p-sm-5">
+      <app-logo class="acceso__logo d-block" />
+      <p class="text-body-secondary mb-4">Plataforma de logística de última milla</p>
 
-      @if (error(); as mensaje) {
-        <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+      <h1 class="fs-4 mb-3">Iniciar sesión</h1>
+
+      @if (sesionVencida()) {
+        <div class="alert alert-warning" role="status">
+          Tu sesión venció. Inicia sesión de nuevo.
+        </div>
       }
 
-      <form #formulario="ngForm" (ngSubmit)="entrar()">
-        <div class="mb-3">
-          <label for="correo" class="form-label">Correo</label>
+      <form (ngSubmit)="entrar()">
+        <app-campo
+          class="mb-3"
+          etiqueta="Correo electrónico"
+          para="correo"
+          [errores]="errores()['correo']"
+        >
           <input
             id="correo"
             name="correo"
@@ -18,32 +26,51 @@
             class="form-control"
             autocomplete="username"
             required
-            email
+            [class.is-invalid]="errores()['correo']"
             [(ngModel)]="correo"
           />
-        </div>
+        </app-campo>
 
-        <div class="mb-4">
-          <label for="password" class="form-label">Contraseña</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            class="form-control"
-            autocomplete="current-password"
-            required
-            [(ngModel)]="password"
-          />
-        </div>
-
-        <button
-          type="submit"
-          class="btn btn-primary w-100"
-          [disabled]="formulario.invalid || enviando()"
+        <app-campo
+          class="mb-3"
+          etiqueta="Contraseña"
+          para="password"
+          [errores]="errores()['password']"
         >
-          {{ enviando() ? 'Entrando…' : 'Entrar' }}
+          <div class="position-relative">
+            <input
+              id="password"
+              name="password"
+              class="form-control pe-5"
+              autocomplete="current-password"
+              required
+              [type]="mostrarPassword() ? 'text' : 'password'"
+              [class.is-invalid]="errores()['password'] || error()"
+              [(ngModel)]="password"
+            />
+            <button
+              type="button"
+              class="btn btn-link btn-sm text-body-secondary text-decoration-none fw-normal acceso__mostrar"
+              [attr.aria-pressed]="mostrarPassword()"
+              (click)="mostrarPassword.set(!mostrarPassword())"
+            >
+              {{ mostrarPassword() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </div>
+        </app-campo>
+
+        @if (error(); as mensaje) {
+          <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+        }
+
+        <button type="submit" class="btn btn-primary btn-lg w-100" [disabled]="enviando()">
+          {{ enviando() ? 'Ingresando…' : 'Ingresar' }}
         </button>
       </form>
+
+      <p class="text-body-secondary text-center mt-4 mb-0">
+        ¿Olvidaste tu contraseña? Pide al administrador que la restablezca.
+      </p>
     </div>
   </div>
 </main>

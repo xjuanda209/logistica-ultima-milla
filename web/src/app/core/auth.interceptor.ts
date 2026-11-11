@@ -9,7 +9,8 @@ import { MensajesService } from './mensajes.service';
 
 /**
  * Agrega el token a cada petición y reacciona a las respuestas que valen para toda la app:
- *  - 401 (token vencido o borrado): cierra la sesión local y manda al login.
+ *  - 401 (token vencido o borrado): cierra la sesión local y manda al login con el aviso
+ *    "Tu sesión venció" (INT-01).
  *  - 403 NO_AUTORIZADO: aviso "Acceso denegado" (INT-22).
  *  - sin respuesta del servidor: enciende la franja "Sin conexión"; la apaga la siguiente respuesta.
  * La página que hizo la petición recibe el error igual, por si quiere mostrar algo más.
@@ -39,9 +40,10 @@ export const authInterceptor: HttpInterceptorFn = (peticion, siguiente) => {
         mensajes.marcarConectado();
       }
 
-      if (error.status === 401 && !esLogin) {
+      // Había sesión y la API ya no acepta el token: el login muestra "Tu sesión venció".
+      if (error.status === 401 && !esLogin && token) {
         auth.limpiarSesion();
-        void router.navigate(['/login']);
+        void router.navigate(['/login'], { queryParams: { sesion: 'vencida' } });
       }
 
       if (error.status === 403 && codigoDeError(error) === 'NO_AUTORIZADO') {
