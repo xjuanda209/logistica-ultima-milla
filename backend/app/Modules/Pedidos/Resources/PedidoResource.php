@@ -2,6 +2,8 @@
 
 namespace App\Modules\Pedidos\Resources;
 
+use App\Modules\Despacho\Models\Evidencia;
+use App\Modules\Incidencias\Models\Incidencia;
 use App\Modules\Pedidos\Models\HistorialPedido;
 use App\Modules\Pedidos\Models\LineaPedido;
 use App\Modules\Pedidos\Models\Pedido;
@@ -38,6 +40,7 @@ class PedidoResource extends JsonResource
             'zona_id' => $this->zona_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'creado_por' => $this->whenLoaded('creador', fn (): ?string => $this->creador?->nombre),
             'comercio' => $this->whenLoaded('comercio', fn (): array => [
                 'id' => $this->comercio->id,
                 'nombre' => $this->comercio->nombre,
@@ -71,6 +74,18 @@ class PedidoResource extends JsonResource
                 'canal' => $evento->canal,
                 'usuario' => $evento->usuario?->nombre,
                 'created_at' => $evento->created_at,
+            ])),
+            'incidencias' => $this->whenLoaded('incidencias', fn () => $this->incidencias->map(fn (Incidencia $incidencia): array => [
+                'id' => $incidencia->id,
+                'estado' => $incidencia->estado,
+                'tipo' => $incidencia->tipo?->nombre,
+                'created_at' => $incidencia->created_at,
+            ])),
+            'evidencias' => $this->whenLoaded('evidencias', fn () => $this->evidencias->map(fn (Evidencia $evidencia): array => [
+                'id' => $evidencia->id,
+                'tipo' => $evidencia->tipo,
+                'con_ubicacion' => $evidencia->latitud !== null && $evidencia->longitud !== null,
+                'created_at' => $evidencia->created_at,
             ])),
         ];
     }

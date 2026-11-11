@@ -41,8 +41,12 @@ class PedidoController extends Controller
      */
     private const RELACIONES_DETALLE = [
         ...self::RELACIONES_LISTA,
+        'creador:id,nombre',
         'lineas:id,pedido_id,producto,cantidad',
         'historial.usuario:id,nombre',
+        'incidencias:id,pedido_id,tipo_incidencia_id,estado,created_at',
+        'incidencias.tipo:id,nombre',
+        'evidencias:id,pedido_id,tipo,latitud,longitud,created_at',
     ];
 
     /**
@@ -122,7 +126,8 @@ class PedidoController extends Controller
     }
 
     /**
-     * GET /api/pedidos/{id} — detalle con líneas e historial.
+     * GET /api/pedidos/{id} — detalle con productos, historial (en orden cronológico), quién lo
+     * creó y un resumen de sus incidencias y evidencias.
      * Si el pedido no es visible para el usuario responde 404.
      */
     public function show(Request $request, int $id): PedidoResource
