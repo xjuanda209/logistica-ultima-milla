@@ -82,12 +82,21 @@ export interface LineaPedido {
   cantidad: number;
 }
 
+/** Campo que cambió al editar un pedido. Las fechas vienen en ISO (UTC). */
+export interface CambioPedido {
+  campo: 'prioridad' | 'franja_inicio' | 'franja_fin' | 'observaciones' | 'lineas';
+  anterior: string | null;
+  nuevo: string | null;
+}
+
 export interface EventoHistorial {
   id: number;
   tipo_evento: 'creacion' | 'edicion' | 'asignacion' | 'cambio_estado';
   estado_anterior: EstadoPedido | null;
   estado_nuevo: EstadoPedido | null;
   detalle: string | null;
+  /** Solo en eventos "edicion": qué campos cambiaron, con el valor anterior y el nuevo. */
+  cambios: CambioPedido[] | null;
   canal: 'web' | 'movil';
   usuario: string | null;
   created_at: string;
@@ -104,17 +113,57 @@ export interface Pedido {
   franja_inicio: string;
   franja_fin: string;
   observaciones: string | null;
+  comercio_id: number;
+  cliente_id: number;
+  repartidor_id: number | null;
+  zona_id: number;
   created_at: string;
+  updated_at: string;
+  /** Solo en la lista: tiene al menos una incidencia en estado "abierta". */
+  incidencia_abierta?: boolean;
+  /** Solo en el detalle: nombre de quien creó el pedido. */
+  creado_por?: string | null;
   comercio?: Referencia & { direccion_recogida: string };
   cliente?: Referencia & { telefono: string };
   repartidor?: Referencia | null;
   zona?: Referencia;
   lineas?: LineaPedido[];
   historial?: EventoHistorial[];
+  incidencias?: IncidenciaDePedido[];
+  evidencias?: EvidenciaDePedido[];
+}
+
+/** Lo que el detalle del pedido muestra de cada incidencia. */
+export interface IncidenciaDePedido {
+  id: number;
+  estado: EstadoIncidencia;
+  tipo: string | null;
+  created_at: string;
+}
+
+/** Lo que el detalle del pedido muestra de cada evidencia. */
+export interface EvidenciaDePedido {
+  id: number;
+  tipo: 'foto_entrega' | 'comprobante';
+  con_ubicacion: boolean;
+  created_at: string;
+}
+
+/** Cuerpo de POST /pedidos (crear) y PUT /pedidos/{id} (editar: sin comercio ni cliente). */
+export interface DatosPedido {
+  comercio_id?: number | null;
+  cliente_id?: number | null;
+  prioridad: Prioridad;
+  franja_inicio: string | null;
+  franja_fin: string | null;
+  observaciones: string;
+  lineas: { producto: string; cantidad: number | null }[];
 }
 
 export interface Cliente {
   id: number;
+  comercio_id: number;
+  zona_id: number;
   nombre: string;
   cedula: string;
   telefono: string;

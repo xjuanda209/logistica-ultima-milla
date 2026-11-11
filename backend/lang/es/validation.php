@@ -99,5 +99,13 @@ return [
         'por_pagina' => 'registros por página',
         'numero' => 'número',
         'con_repartidores' => 'con repartidores',
+        'buscar' => 'búsqueda',
+        'franja_inicio' => 'inicio de la franja',
+        'franja_fin' => 'fin de la franja',
+        'lineas' => 'productos',
+        'lineas.*.producto' => 'producto',
+        'lineas.*.cantidad' => 'cantidad',
+        'desde' => 'fecha desde',
+        'hasta' => 'fecha hasta',
     ],
 ];

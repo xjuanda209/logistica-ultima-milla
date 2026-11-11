@@ -14,7 +14,7 @@ const MAXIMO_VISIBLES = 4;
 /**
  * Mensajes del sistema (mockup INT-22), todos en español y sin textos técnicos:
  *
- *   mensajes.exito('Pedido P-000131 creado correctamente.');   toast verde
+ *   mensajes.exito('Pedido PED-0131 creado correctamente.');   toast verde
  *   mensajes.error(mensajeDeError(error));                    toast rojo con el motivo
  *   mensajes.accesoDenegado();                                 aviso "Acceso denegado"
  *

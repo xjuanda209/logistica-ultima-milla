@@ -1,18 +1,96 @@
 <div class="d-grid gap-4">
   <app-tarjeta>
-    <div class="d-flex flex-wrap align-items-end gap-3">
-      <div>
-        <label for="filtro-estado" class="form-label">Estado</label>
-        <select id="filtro-estado" class="form-select" #filtro (change)="filtrar(filtro.value)">
-          <option value="" [selected]="!estado()">Todos</option>
+    <form class="row g-3 align-items-end" (ngSubmit)="filtrar()">
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Buscar por número"
+        para="filtro-numero"
+        [errores]="errores()['numero']"
+      >
+        <input
+          id="filtro-numero"
+          name="numero"
+          type="search"
+          class="form-control"
+          maxlength="20"
+          placeholder="PED-0131"
+          [class.is-invalid]="errores()['numero']"
+          [(ngModel)]="filtros.numero"
+        />
+      </app-campo>
+
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Creado desde"
+        para="filtro-desde"
+        [errores]="errores()['desde']"
+      >
+        <input
+          id="filtro-desde"
+          name="desde"
+          type="date"
+          class="form-control"
+          [class.is-invalid]="errores()['desde']"
+          [(ngModel)]="filtros.desde"
+        />
+      </app-campo>
+
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Hasta"
+        para="filtro-hasta"
+        [errores]="errores()['hasta']"
+      >
+        <input
+          id="filtro-hasta"
+          name="hasta"
+          type="date"
+          class="form-control"
+          [class.is-invalid]="errores()['hasta']"
+          [(ngModel)]="filtros.hasta"
+        />
+      </app-campo>
+
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Estado"
+        para="filtro-estado"
+        [errores]="errores()['estado']"
+      >
+        <select id="filtro-estado" name="estado" class="form-select" [(ngModel)]="filtros.estado">
+          <option value="">Todos</option>
           @for (opcion of listaEstados; track opcion) {
-            <option [value]="opcion" [selected]="estado() === opcion">
-              {{ estados[opcion].texto }}
-            </option>
+            <option [value]="opcion">{{ estados[opcion].texto }}</option>
           }
         </select>
+      </app-campo>
+
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Zona"
+        para="filtro-zona"
+        [errores]="errores()['zona_id']"
+      >
+        <select id="filtro-zona" name="zona_id" class="form-select" [(ngModel)]="filtros.zona_id">
+          <option value="">Todas</option>
+          @for (zona of zonas(); track zona.id) {
+            <option [value]="zona.id">{{ zona.nombre }}</option>
+          }
+        </select>
+      </app-campo>
+
+      <div class="col-12 col-lg-auto d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        @if (hayFiltros()) {
+          <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">
+            Limpiar
+          </button>
+        }
+        @if (puedeCrear) {
+          <a class="btn btn-acento fw-semibold" routerLink="/pedidos/nuevo">+ Nuevo pedido</a>
+        }
       </div>
-    </div>
+    </form>
   </app-tarjeta>
 
   <app-tarjeta>
@@ -22,31 +100,65 @@
       [cargando]="cargando()"
       [error]="error()"
       [vacia]="pedidos().length === 0"
-      textoVacio="No hay pedidos para mostrar."
+      [textoVacio]="
+        hayFiltros() ? 'Ningún pedido coincide con los filtros.' : 'Todavía no hay pedidos.'
+      "
+      [detalleVacio]="!hayFiltros() && puedeCrear ? 'Crea el primero con «+ Nuevo pedido».' : null"
+      iconoVacio="bi-box-seam"
       [meta]="meta()"
       (cambiarPagina)="cargar($event)"
       (reintentar)="cargar(1)"
     >
       @for (pedido of pedidos(); track pedido.id) {
         <tr>
-          <td class="fw-semibold text-nowrap">{{ pedido.numero }}</td>
+          <td class="fw-bold text-nowrap">{{ pedido.numero }}</td>
           <td>{{ pedido.cliente?.nombre }}</td>
-          <td>{{ pedido.comercio?.nombre }}</td>
-          <td>{{ pedido.zona?.nombre }}</td>
-          <td class="text-nowrap">
-            {{ pedido.franja_inicio | date: 'dd/MM/yyyy HH:mm' }} –
-            {{ pedido.franja_fin | date: 'HH:mm' }}
-          </td>
-          <td><app-badge-estado tipo="prioridad" [valor]="pedido.prioridad" /></td>
+          @if (veComercio) {
+            <td>{{ pedido.comercio?.nombre }}</td>
+          }
+          <td class="text-nowrap">{{ pedido.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td><app-badge-estado [valor]="pedido.estado" /></td>
-          <td>{{ pedido.repartidor?.nombre ?? '—' }}</td>
+          <td class="text-center">
+            @if (pedido.incidencia_abierta) {
+              <i
+                class="bi bi-exclamation-triangle-fill text-danger"
+                role="img"
+                aria-label="Tiene una incidencia abierta"
+                title="Tiene una incidencia abierta"
+              ></i>
+            }
+          </td>
           <td class="text-end">
-            <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/pedidos', pedido.id]">
+            <a
+              class="btn btn-outline-secondary btn-sm text-nowrap"
+              [routerLink]="['/pedidos', pedido.id]"
+            >
               Ver detalle
             </a>
           </td>
         </tr>
       }
     </app-tabla>
+
+    @if (!error()) {
+      <p class="text-body-secondary small mt-3 mb-0">
+        @if (comercioPropio) {
+          Mostrando solo los pedidos de «{{ comercioPropio }}», del más reciente al más antiguo.
+        } @else {
+          Pedidos del más reciente al más antiguo.
+        }
+        @if (pedidos().length > 0) {
+          <i class="bi bi-exclamation-triangle-fill text-danger" aria-hidden="true"></i>
+          indica una incidencia abierta.
+        }
+      </p>
+    }
   </app-tarjeta>
+
+  @if (noEncontrado()) {
+    <div class="alert alert-info mb-0" role="status">
+      <strong>Pedido no encontrado.</strong>
+      No hay ningún pedido con el número «{{ numero() }}» entre los que puedes consultar.
+    </div>
+  }
 </div>

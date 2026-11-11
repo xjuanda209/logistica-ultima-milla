@@ -1,103 +1,220 @@
-<a routerLink="/pedidos" class="small">← Volver a pedidos</a>
-
 @if (cargando()) {
-  <p class="text-body-secondary mt-3">Cargando…</p>
+  <p class="text-body-secondary">Cargando…</p>
 } @else if (error(); as mensaje) {
-  <div class="alert alert-danger mt-3" role="alert">{{ mensaje }}</div>
+  <app-tarjeta>
+    <app-estado-vacio
+      tono="error"
+      icono="bi-exclamation-octagon"
+      titulo="No se pudo cargar el pedido"
+      [texto]="mensaje"
+    >
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="cargar()">
+          Reintentar
+        </button>
+        <a class="btn btn-outline-secondary" routerLink="/pedidos">Volver a pedidos</a>
+      </div>
+    </app-estado-vacio>
+  </app-tarjeta>
 } @else if (pedido(); as p) {
-  <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-4">
-    <h2 class="h1 mb-0">Pedido {{ p.numero }}</h2>
-    <app-badge-estado [valor]="p.estado" />
-    <span class="text-body-secondary">Prioridad</span>
-    <app-badge-estado tipo="prioridad" [valor]="p.prioridad" />
-  </div>
-
-  <div class="row g-3">
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header">Entrega</div>
-        <div class="card-body">
-          <dl class="row mb-0">
-            <dt class="col-sm-4">Cliente</dt>
-            <dd class="col-sm-8">{{ p.cliente?.nombre }} · {{ p.cliente?.telefono }}</dd>
-            <dt class="col-sm-4">Dirección</dt>
-            <dd class="col-sm-8">{{ p.direccion }}, {{ p.barrio }}</dd>
-            <dt class="col-sm-4">Zona</dt>
-            <dd class="col-sm-8">{{ p.zona?.nombre }}</dd>
-            <dt class="col-sm-4">Indicaciones</dt>
-            <dd class="col-sm-8">{{ p.indicaciones ?? '—' }}</dd>
-            <dt class="col-sm-4">Franja</dt>
-            <dd class="col-sm-8">
-              {{ p.franja_inicio | date: 'dd/MM/yyyy HH:mm' }} – {{ p.franja_fin | date: 'HH:mm' }}
-            </dd>
-            <dt class="col-sm-4">Observaciones</dt>
-            <dd class="col-sm-8 mb-0">{{ p.observaciones ?? '—' }}</dd>
-          </dl>
+  <div class="d-grid gap-4">
+    <app-tarjeta>
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <h2 class="fs-3 fw-bold mb-0">Pedido {{ p.numero }}</h2>
+        <div class="d-flex flex-wrap align-items-center gap-2 me-auto">
+          <app-badge-estado [valor]="p.estado" />
+          <app-badge-estado tipo="prioridad" prefijo="Prioridad" [valor]="p.prioridad" />
         </div>
-      </div>
-    </div>
-
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header">Origen y reparto</div>
-        <div class="card-body">
-          <dl class="row mb-0">
-            <dt class="col-sm-4">Comercio</dt>
-            <dd class="col-sm-8">{{ p.comercio?.nombre }}</dd>
-            <dt class="col-sm-4">Recogida</dt>
-            <dd class="col-sm-8">{{ p.comercio?.direccion_recogida }}</dd>
-            <dt class="col-sm-4">Repartidor</dt>
-            <dd class="col-sm-8">{{ p.repartidor?.nombre ?? 'Sin asignar' }}</dd>
-            <dt class="col-sm-4">Creado</dt>
-            <dd class="col-sm-8 mb-0">{{ p.created_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
-          </dl>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-lg-5">
-      <div class="card h-100">
-        <div class="card-header">Productos</div>
-        <table class="table mb-0">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th class="text-end">Cantidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (linea of p.lineas ?? []; track linea.id) {
-              <tr>
-                <td>{{ linea.producto }}</td>
-                <td class="text-end">{{ linea.cantidad }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="col-lg-7">
-      <div class="card h-100">
-        <div class="card-header">Historial</div>
-        <ul class="list-group list-group-flush">
-          @for (evento of p.historial ?? []; track evento.id) {
-            <li class="list-group-item">
-              <div class="d-flex justify-content-between gap-2">
-                <span>
-                  @if (evento.estado_nuevo; as nuevo) {
-                    <app-badge-estado [valor]="nuevo" />
-                  }
-                  {{ evento.detalle }}
-                </span>
-                <span class="text-body-secondary small text-nowrap">
-                  {{ evento.created_at | date: 'dd/MM/yyyy HH:mm' }}
-                </span>
-              </div>
-              <div class="small text-body-secondary">{{ evento.usuario }} · {{ evento.canal }}</div>
-            </li>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-outline-secondary" routerLink="/pedidos">Volver a pedidos</a>
+          @if (puedeEditar()) {
+            <a class="btn btn-primary" [routerLink]="['/pedidos', p.id, 'editar']">
+              Editar pedido
+            </a>
           }
-        </ul>
+        </div>
+      </div>
+    </app-tarjeta>
+
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-7 d-grid gap-4">
+        <app-tarjeta titulo="Datos del pedido">
+          <dl class="row mb-0">
+            <dt class="col-sm-4 text-body-secondary">Comercio</dt>
+            <dd class="col-sm-8">{{ p.comercio?.nombre }}</dd>
+            <dt class="col-sm-4 text-body-secondary">Cliente</dt>
+            <dd class="col-sm-8">{{ p.cliente?.nombre }} · {{ p.cliente?.telefono }}</dd>
+            <dt class="col-sm-4 text-body-secondary">Dirección</dt>
+            <dd class="col-sm-8">
+              {{ p.direccion }} · {{ p.barrio }}
+              <div class="small text-body-secondary">
+                Zona {{ p.zona?.nombre }}
+                @if (p.indicaciones) {
+                  · {{ p.indicaciones }}
+                }
+              </div>
+            </dd>
+            <dt class="col-sm-4 text-body-secondary">Franja</dt>
+            <dd class="col-sm-8">
+              {{ p.franja_inicio | date: 'dd/MM/yyyy HH:mm' }} –
+              {{
+                p.franja_fin
+                  | date
+                    : ((p.franja_inicio | date: 'yyyyMMdd') === (p.franja_fin | date: 'yyyyMMdd')
+                        ? 'HH:mm'
+                        : 'dd/MM/yyyy HH:mm')
+              }}
+            </dd>
+            <dt class="col-sm-4 text-body-secondary">Repartidor</dt>
+            <dd class="col-sm-8">
+              @if (p.repartidor; as repartidor) {
+                {{ repartidor.nombre }}
+              } @else {
+                <span class="text-body-secondary">Sin asignar</span>
+              }
+            </dd>
+            <dt class="col-sm-4 text-body-secondary">Observaciones</dt>
+            <dd class="col-sm-8 mb-0">
+              @if (p.observaciones) {
+                {{ p.observaciones }}
+              } @else {
+                <span class="text-body-secondary">Sin observaciones</span>
+              }
+            </dd>
+          </dl>
+        </app-tarjeta>
+
+        <app-tarjeta titulo="Productos">
+          <div class="overflow-x-auto overflow-y-hidden">
+            <table class="table align-middle mb-0">
+              <caption class="visually-hidden">
+                Productos del pedido
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col" class="text-end">Cant.</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (linea of p.lineas ?? []; track linea.id) {
+                  <tr>
+                    <td>{{ linea.producto }}</td>
+                    <td class="text-end">{{ linea.cantidad }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </app-tarjeta>
+
+        <app-tarjeta titulo="Incidencias del pedido">
+          @for (incidencia of p.incidencias ?? []; track incidencia.id) {
+            <div class="d-flex flex-wrap align-items-center gap-2" [class.mt-2]="!$first">
+              <span>#{{ incidencia.id }} · {{ incidencia.tipo }}</span>
+              <app-badge-estado tipo="incidencia" [valor]="incidencia.estado" />
+              <span class="text-body-secondary small">
+                {{ incidencia.created_at | date: 'dd/MM HH:mm' }}
+              </span>
+            </div>
+          } @empty {
+            <app-estado-vacio
+              icono="bi-check2-circle"
+              titulo="Sin incidencias"
+              texto="Este pedido no tiene incidencias reportadas."
+              [compacto]="true"
+            />
+          }
+        </app-tarjeta>
+      </div>
+
+      <div class="col-lg-5 d-grid gap-4">
+        <app-tarjeta titulo="Historial de estados">
+          <ol class="linea-tiempo">
+            @for (evento of historial(); track evento.id) {
+              <li>
+                <div>
+                  @if (evento.tipo_evento === 'edicion') {
+                    <strong>Editado</strong>
+                  } @else if (evento.estado_nuevo; as nuevo) {
+                    <strong>{{ estados[nuevo].texto }}</strong>
+                    @if (evento.estado_anterior; as anterior) {
+                      <span class="text-body-secondary">
+                        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                        <span class="visually-hidden">antes</span>
+                        {{ estados[anterior].texto }}
+                      </span>
+                    }
+                  }
+                  @if (evento.usuario) {
+                    · {{ evento.usuario }}
+                  }
+                </div>
+                <div class="small text-body-secondary">
+                  {{ evento.created_at | date: 'dd/MM HH:mm' }} · canal
+                  {{ canales[evento.canal] }}
+                  @if (!evento.cambios && evento.detalle && evento.tipo_evento !== 'creacion') {
+                    · {{ evento.detalle }}
+                  }
+                </div>
+                @if (evento.cambios; as cambios) {
+                  <ul class="small list-unstyled mb-0 mt-1">
+                    @for (cambio of cambios; track cambio.campo) {
+                      <li>
+                        <span class="text-body-secondary">{{ nombreCampo(cambio) }}:</span>
+                        @if (esFecha(cambio)) {
+                          {{ cambio.anterior | date: 'dd/MM/yyyy HH:mm' }}
+                          <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                          <span class="visually-hidden">cambió a</span>
+                          {{ cambio.nuevo | date: 'dd/MM/yyyy HH:mm' }}
+                        } @else {
+                          {{ valorDe(cambio, cambio.anterior) }}
+                          <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                          <span class="visually-hidden">cambió a</span>
+                          {{ valorDe(cambio, cambio.nuevo) }}
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+              </li>
+            } @empty {
+              <li class="text-body-secondary">Este pedido todavía no tiene eventos.</li>
+            }
+          </ol>
+        </app-tarjeta>
+
+        <app-tarjeta titulo="Evidencias">
+          @for (evidencia of p.evidencias ?? []; track evidencia.id) {
+            <div class="d-flex align-items-center gap-3" [class.mt-3]="!$first">
+              <span
+                class="d-inline-flex align-items-center justify-content-center rounded bg-primary-subtle text-primary-emphasis p-3"
+              >
+                <i class="bi bi-image fs-4" aria-hidden="true"></i>
+              </span>
+              <div>
+                <div>{{ tiposEvidencia[evidencia.tipo] }}</div>
+                <div class="small text-body-secondary">
+                  {{ evidencia.created_at | date: 'dd/MM HH:mm' }} ·
+                  {{ evidencia.con_ubicacion ? 'con ubicación' : 'sin ubicación' }}
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <app-estado-vacio
+              icono="bi-camera"
+              titulo="Sin evidencias"
+              texto="El repartidor las registra al entregar el pedido."
+              [compacto]="true"
+            />
+          }
+        </app-tarjeta>
+
+        <p class="text-body-secondary small mb-0">
+          Creado por {{ p.creado_por ?? 'un usuario del sistema' }} ·
+          {{ p.created_at | date: 'dd/MM/yyyy HH:mm' }}<br />
+          Última modificación · {{ p.updated_at | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
       </div>
     </div>
   </div>

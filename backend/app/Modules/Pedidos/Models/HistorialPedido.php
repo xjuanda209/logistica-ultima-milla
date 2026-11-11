@@ -35,6 +35,25 @@ class HistorialPedido extends Model
     }
 
     /**
+     * En un evento "edicion" el detalle guarda, como JSON, los campos que cambiaron:
+     *   {"cambios": [{"campo": "prioridad", "anterior": "media", "nuevo": "alta"}]}
+     * Las fechas van en ISO (UTC). En los demás eventos el detalle es texto libre y esto da null.
+     *
+     * @return list<array{campo: string, anterior: ?string, nuevo: ?string}>|null
+     */
+    public function cambios(): ?array
+    {
+        if ($this->tipo_evento !== TipoEvento::Edicion || $this->detalle === null) {
+            return null;
+        }
+
+        $detalle = json_decode($this->detalle, true);
+        $cambios = is_array($detalle) ? ($detalle['cambios'] ?? null) : null;
+
+        return is_array($cambios) ? $cambios : null;
+    }
+
+    /**
      * @return BelongsTo<Pedido, $this>
      */
     public function pedido(): BelongsTo

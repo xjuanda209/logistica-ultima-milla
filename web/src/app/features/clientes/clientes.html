@@ -1,25 +1,320 @@
-<app-tarjeta>
-  <app-tabla
-    titulo="Clientes"
-    [columnas]="['Nombre', 'Cédula', 'Teléfono', 'Dirección', 'Zona', 'Comercio']"
-    [cargando]="cargando()"
-    [error]="error()"
-    [vacia]="clientes().length === 0"
-    textoVacio="No hay clientes para mostrar."
-    iconoVacio="bi-people"
-    [meta]="meta()"
-    (cambiarPagina)="cargar($event)"
-    (reintentar)="cargar(1)"
-  >
-    @for (cliente of clientes(); track cliente.id) {
-      <tr>
-        <td class="fw-semibold">{{ cliente.nombre }}</td>
-        <td>{{ cliente.cedula }}</td>
-        <td>{{ cliente.telefono }}</td>
-        <td>{{ cliente.direccion }}, {{ cliente.barrio }}</td>
-        <td>{{ cliente.zona?.nombre }}</td>
-        <td>{{ cliente.comercio?.nombre }}</td>
-      </tr>
-    }
-  </app-tabla>
-</app-tarjeta>
+@if (vieneDePedido()) {
+  <div class="alert alert-info d-flex flex-wrap align-items-center gap-2 mb-4" role="status">
+    <span class="flex-grow-1">
+      Registra el cliente y al guardarlo volverás al pedido que estabas creando.
+    </span>
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="volverAlPedido()">
+      Volver al pedido sin registrar
+    </button>
+  </div>
+}
+
+<div class="row g-4 align-items-start">
+  <div class="col-lg-5 col-xl-4">
+    <app-tarjeta>
+      <label for="clientes-comercio" class="form-label">Comercio</label>
+      @if (comercioFijo) {
+        <div class="input-group mb-3">
+          <input
+            id="clientes-comercio"
+            type="text"
+            class="form-control"
+            [value]="nombreComercio()"
+            readonly
+            disabled
+          />
+          <span class="input-group-text" title="Solo trabajas con tu comercio">
+            <i class="bi bi-lock-fill" aria-hidden="true"></i>
+          </span>
+        </div>
+      } @else {
+        <select
+          id="clientes-comercio"
+          class="form-select mb-3"
+          [ngModel]="comercioId()"
+          (ngModelChange)="cambiarComercio($event)"
+        >
+          @for (comercio of comercios(); track comercio.id) {
+            <option [ngValue]="comercio.id">
+              {{ comercio.nombre }}{{ comercio.activo ? '' : ' (desactivado)' }}
+            </option>
+          }
+        </select>
+      }
+
+      <div class="input-group mb-3">
+        <span class="input-group-text bg-body"
+          ><i class="bi bi-search" aria-hidden="true"></i
+        ></span>
+        <input
+          type="search"
+          class="form-control"
+          name="buscar"
+          maxlength="60"
+          placeholder="Buscar por nombre, cédula o teléfono"
+          aria-label="Buscar por nombre, cédula o teléfono"
+          [(ngModel)]="buscar"
+          (ngModelChange)="alBuscar()"
+        />
+      </div>
+
+      @if (cargando()) {
+        <div class="placeholder-glow py-2" aria-hidden="true">
+          @for (fila of [1, 2, 3]; track fila) {
+            <div class="py-2">
+              <span class="placeholder rounded col-6 d-block mb-2"></span>
+              <span class="placeholder rounded col-9 d-block"></span>
+            </div>
+          }
+        </div>
+      } @else if (error(); as mensaje) {
+        <app-estado-vacio
+          tono="error"
+          icono="bi-exclamation-octagon"
+          titulo="No se pudo cargar la información"
+          [texto]="mensaje"
+          [compacto]="true"
+        >
+          <button type="button" class="btn btn-outline-secondary" (click)="cargar(1)">
+            Reintentar
+          </button>
+        </app-estado-vacio>
+      } @else if (datos().length === 0) {
+        <app-estado-vacio
+          icono="bi-people"
+          [titulo]="
+            buscar.trim()
+              ? 'Ningún cliente coincide con la búsqueda.'
+              : 'Este comercio todavía no tiene clientes.'
+          "
+          [texto]="buscar.trim() ? null : 'Registra el primero con el formulario.'"
+          [compacto]="true"
+        />
+      } @else {
+        <div class="list-group list-group-flush mx-n3 mb-3">
+          @for (cliente of datos(); track cliente.id) {
+            <button
+              type="button"
+              class="list-group-item list-group-item-action px-3"
+              [class.bg-primary-subtle]="editando()?.id === cliente.id"
+              [attr.aria-current]="editando()?.id === cliente.id ? 'true' : null"
+              (click)="elegir(cliente)"
+            >
+              <span class="d-block fw-semibold text-body-emphasis">{{ cliente.nombre }}</span>
+              <span class="d-block text-body-secondary small">
+                CC {{ cliente.cedula }} · {{ cliente.telefono }}
+              </span>
+            </button>
+          }
+        </div>
+
+        <app-paginacion
+          class="d-block mb-3"
+          [meta]="meta()"
+          [deshabilitada]="cargando()"
+          (cambiar)="cargar($event)"
+        />
+      }
+
+      <button type="button" class="btn btn-primary w-100" (click)="nuevo()">+ Nuevo cliente</button>
+    </app-tarjeta>
+  </div>
+
+  <div class="col-lg-7 col-xl-8">
+    <app-tarjeta titulo="Datos del cliente">
+      <span acciones class="text-body-secondary small">
+        {{ editando() ? 'Editando a ' + editando()?.nombre : 'Cliente nuevo' }}
+      </span>
+
+      <form (ngSubmit)="guardar()">
+        @if (errorFormulario(); as mensaje) {
+          <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+        }
+
+        <div class="row g-3">
+          <app-campo
+            class="col-md-6"
+            etiqueta="Nombre"
+            para="cliente-nombre"
+            [obligatorio]="true"
+            [errores]="errores()['nombre']"
+          >
+            <input
+              id="cliente-nombre"
+              name="nombre"
+              type="text"
+              class="form-control"
+              maxlength="120"
+              required
+              [class.is-invalid]="errores()['nombre']"
+              [(ngModel)]="formulario.nombre"
+            />
+          </app-campo>
+
+          <app-campo
+            class="col-md-6"
+            etiqueta="Cédula"
+            para="cliente-cedula"
+            [obligatorio]="true"
+            [errores]="errores()['cedula']"
+          >
+            <input
+              id="cliente-cedula"
+              name="cedula"
+              type="text"
+              inputmode="numeric"
+              class="form-control"
+              maxlength="20"
+              required
+              [class.is-invalid]="errores()['cedula']"
+              [(ngModel)]="formulario.cedula"
+            />
+          </app-campo>
+
+          <app-campo
+            class="col-md-6"
+            etiqueta="Teléfono de contacto"
+            para="cliente-telefono"
+            [obligatorio]="true"
+            [errores]="errores()['telefono']"
+          >
+            <input
+              id="cliente-telefono"
+              name="telefono"
+              type="tel"
+              class="form-control"
+              maxlength="15"
+              required
+              [class.is-invalid]="errores()['telefono']"
+              [(ngModel)]="formulario.telefono"
+            />
+          </app-campo>
+
+          <app-campo
+            class="col-md-6"
+            etiqueta="Correo"
+            nota="opcional"
+            para="cliente-correo"
+            [errores]="errores()['correo']"
+          >
+            <input
+              id="cliente-correo"
+              name="correo"
+              type="email"
+              class="form-control"
+              maxlength="120"
+              placeholder="laura@correo.test"
+              [class.is-invalid]="errores()['correo']"
+              [(ngModel)]="formulario.correo"
+            />
+          </app-campo>
+        </div>
+
+        <h3 class="h6 mt-4 mb-3">Dirección de entrega</h3>
+
+        <div class="row g-3">
+          <app-campo
+            class="col-md-6"
+            etiqueta="Dirección"
+            para="cliente-direccion"
+            [obligatorio]="true"
+            [errores]="errores()['direccion']"
+          >
+            <input
+              id="cliente-direccion"
+              name="direccion"
+              type="text"
+              class="form-control"
+              maxlength="200"
+              placeholder="Cra 8 # 20-15, apto 301"
+              required
+              [class.is-invalid]="errores()['direccion']"
+              [(ngModel)]="formulario.direccion"
+            />
+          </app-campo>
+
+          <app-campo
+            class="col-md-3"
+            etiqueta="Barrio"
+            para="cliente-barrio"
+            [obligatorio]="true"
+            [errores]="errores()['barrio']"
+          >
+            <input
+              id="cliente-barrio"
+              name="barrio"
+              type="text"
+              class="form-control"
+              maxlength="80"
+              required
+              [class.is-invalid]="errores()['barrio']"
+              [(ngModel)]="formulario.barrio"
+            />
+          </app-campo>
+
+          <app-campo
+            class="col-md-3"
+            etiqueta="Zona"
+            para="cliente-zona"
+            [obligatorio]="true"
+            [errores]="errores()['zona_id']"
+          >
+            <select
+              id="cliente-zona"
+              name="zona_id"
+              class="form-select"
+              required
+              [class.is-invalid]="errores()['zona_id']"
+              [(ngModel)]="formulario.zona_id"
+            >
+              <option [ngValue]="null">Elige…</option>
+              @for (zona of zonas(); track zona.id) {
+                <option [ngValue]="zona.id">{{ zona.nombre }}</option>
+              }
+            </select>
+          </app-campo>
+
+          <app-campo
+            class="col-12"
+            etiqueta="Indicaciones adicionales"
+            nota="opcional"
+            para="cliente-indicaciones"
+            [errores]="errores()['indicaciones']"
+          >
+            <input
+              id="cliente-indicaciones"
+              name="indicaciones"
+              type="text"
+              class="form-control"
+              maxlength="500"
+              placeholder="Portería, torre B"
+              [class.is-invalid]="errores()['indicaciones']"
+              [(ngModel)]="formulario.indicaciones"
+            />
+          </app-campo>
+        </div>
+
+        @if (editando()) {
+          <p class="text-body-secondary small mt-3 mb-0">
+            Los pedidos ya creados conservan la dirección que tenía el cliente en ese momento.
+          </p>
+        }
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="guardando() || comercioId() === null"
+          >
+            {{ guardando() ? 'Guardando…' : 'Guardar cliente' }}
+          </button>
+          @if (editando()) {
+            <button type="button" class="btn btn-outline-secondary" (click)="nuevo()">
+              Cancelar
+            </button>
+          }
+        </div>
+      </form>
+    </app-tarjeta>
+  </div>
+</div>
