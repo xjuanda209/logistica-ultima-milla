@@ -136,6 +136,100 @@ class PedidoController extends Controller
     }
 
     /**
+     * PUT /api/pedidos/{id} — cambia prioridad, franja, observaciones y productos, solo mientras
+     * el pedido está en "creado". Registra el evento "edicion" con los campos que cambiaron
+     * (valor anterior y nuevo) en el detalle; si no cambió nada, no registra nada.
+     */
+    public function update(GuardarPedidoRequest $request, int $id): PedidoResource
+    {
+        $datos = $request->validated();
+        $usuario = $request->user();
+        $canal = Canal::deLaPeticion($request);
+
+        DB::transaction(function () use ($datos, $usuario, $canal, $id): void {
+            // Se bloquea la fila: nadie lo asigna ni lo cancela mientras se guarda la edición.
+            $pedido = Pedido::query()
+                ->with(['lineas' => fn ($lineas) => $lineas->orderBy('id')])
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            if ($pedido->estado !== EstadoPedido::Creado) {
+                throw new ErrorApi(
+                    'PEDIDO_NO_EDITABLE',
+                    'El pedido solo puede editarse mientras está en estado «Creado».',
+                    409,
+                );
+            }
+
+            $lineas = self::lineasLimpias($datos['lineas']);
+            $nuevos = [
+                'prioridad' => $datos['prioridad'],
+                'franja_inicio' => Carbon::parse($datos['franja_inicio'])->utc()->toIso8601ZuluString(),
+                'franja_fin' => Carbon::parse($datos['franja_fin'])->utc()->toIso8601ZuluString(),
+                'observaciones' => $datos['observaciones'] ?? null,
+                'lineas' => self::textoDeLineas($lineas),
+            ];
+            $anteriores = [
+                'prioridad' => $pedido->prioridad->value,
+                'franja_inicio' => $pedido->franja_inicio->utc()->toIso8601ZuluString(),
+                'franja_fin' => $pedido->franja_fin->utc()->toIso8601ZuluString(),
+                'observaciones' => $pedido->observaciones,
+                'lineas' => self::textoDeLineas($pedido->lineas->map->only(['producto', 'cantidad'])->all()),
+            ];
+
+            $cambios = [];
+            foreach ($nuevos as $campo => $nuevo) {
+                if ($nuevo !== $anteriores[$campo]) {
+                    $cambios[] = ['campo' => $campo, 'anterior' => $anteriores[$campo], 'nuevo' => $nuevo];
+                }
+            }
+
+            if ($cambios === []) {
+                return;
+            }
+
+            if ($nuevos['lineas'] !== $anteriores['lineas']) {
+                $pedido->lineas()->delete();
+                $pedido->lineas()->createMany($lineas);
+            }
+
+            $pedido->fill([
+                'prioridad' => $nuevos['prioridad'],
+                'franja_inicio' => Carbon::parse($nuevos['franja_inicio']),
+                'franja_fin' => Carbon::parse($nuevos['franja_fin']),
+                'observaciones' => $nuevos['observaciones'],
+            ]);
+            $pedido->updated_at = now();
+            $pedido->save();
+
+            $pedido->historial()->create([
+                'usuario_id' => $usuario->id,
+                'tipo_evento' => TipoEvento::Edicion,
+                'estado_anterior' => null,
+                'estado_nuevo' => null,
+                'detalle' => json_encode(['cambios' => $cambios], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                'canal' => $canal,
+                'created_at' => now(),
+            ]);
+        });
+
+        return $this->show($request, $id);
+    }
+
+    /**
+     * "Pan de bono x12 × 2, Torta de chocolate × 1": los productos como texto, para el historial.
+     *
+     * @param  array<int, array{producto: string, cantidad: int}>  $lineas
+     */
+    private static function textoDeLineas(array $lineas): string
+    {
+        return implode(', ', array_map(
+            fn (array $linea): string => "{$linea['producto']} × {$linea['cantidad']}",
+            $lineas,
+        ));
+    }
+
+    /**
      * Ejecuta la creación dentro de una transacción. Si otra persona tomó el mismo número en ese
      * instante (la base lo rechaza por duplicado), lo intenta de nuevo con el siguiente.
      *

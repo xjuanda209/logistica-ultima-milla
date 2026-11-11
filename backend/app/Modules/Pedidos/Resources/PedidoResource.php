@@ -67,6 +67,7 @@ class PedidoResource extends JsonResource
                 'estado_anterior' => $evento->estado_anterior,
                 'estado_nuevo' => $evento->estado_nuevo,
                 'detalle' => $evento->detalle,
+                'cambios' => $evento->cambios(),
                 'canal' => $evento->canal,
                 'usuario' => $evento->usuario?->nombre,
                 'created_at' => $evento->created_at,

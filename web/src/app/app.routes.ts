@@ -75,6 +75,14 @@ export const routes: Routes = [
           import('./features/pedidos/pedido-detalle').then((m) => m.PedidoDetalle),
       },
       {
+        path: 'pedidos/:id/editar',
+        title: 'Editar pedido',
+        canActivate: [rolGuard],
+        data: { roles: rolesDe('/clientes') },
+        loadComponent: () =>
+          import('./features/pedidos/pedido-formulario').then((m) => m.PedidoFormulario),
+      },
+      {
         path: 'clientes',
         title: 'Clientes',
         canActivate: [rolGuard],
