@@ -75,7 +75,9 @@ y un `routes.php`.
   `Route::get(...)->middleware('rol:administrador,operador');`
 - **Visibilidad de datos**: qué pedidos ve cada rol se decide en un solo lugar, `Pedido::scopeVisiblesPara()`.
   Todo lo que dependa de pedidos debe usarlo (`Pedido::query()->visiblesPara($usuario)`), no repetir el filtro.
-  Un registro ajeno responde 404, no 403.
+  Los clientes tienen la misma regla en `Cliente::scopeVisiblesPara()`.
+  Un registro ajeno responde 404, no 403. Al usuario de un comercio se le fuerza su `comercio_id` en el
+  Form Request (`prepareForValidation`), aunque la petición diga otro.
 - **Respuestas**: siempre con API Resources. Un registro: `{ "data": {...} }`. Una lista: `paginate(20)`,
   que produce `{ "data": [...], "meta": {...} }`.
 - **Errores**: siempre con este formato (lo arma `ManejadorErrores`, no los controladores):
@@ -112,6 +114,10 @@ Ejemplo: "crear pedidos" en el módulo Pedidos. El código de referencia es `app
 7. `vendor/bin/pint --dirty` y `php artisan test`.
 
 Todo cambio de estado de un pedido debe insertar una fila en `historial_pedido` (solo se inserta, nunca se edita).
+El canal del evento sale de `Canal::deLaPeticion($request)`: la app móvil manda el encabezado `X-Canal: movil`;
+sin encabezado es `web`. En un evento `edicion` el `detalle` es un JSON con los campos cambiados
+(`HistorialPedido::cambios()`); en los demás eventos es texto libre.
+El número del pedido (`P-000001`) lo genera `Pedido::siguienteNumero()`; ver `PedidoController::store`.
 
 ## Web (`web/src/app`)
 

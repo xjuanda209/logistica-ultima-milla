@@ -87,11 +87,20 @@ Todos con la contraseña `password`.
 | GET    | `/api/me`            | cualquiera con sesión             |
 | GET    | `/api/pedidos`       | todos (cada uno ve los suyos)     |
 | GET    | `/api/pedidos/{id}`  | todos (cada uno ve los suyos)     |
+| POST   | `/api/pedidos`       | administrador, operador, comercio |
+| PUT    | `/api/pedidos/{id}`  | administrador, operador, comercio |
 | GET    | `/api/clientes`      | administrador, operador, comercio |
+| POST   | `/api/clientes`      | administrador, operador, comercio |
+| PUT    | `/api/clientes/{id}` | administrador, operador, comercio |
 | GET    | `/api/incidencias`   | todos (según sus pedidos)         |
 | GET    | `/api/panel/resumen` | administrador, operador, comercio |
 
-Las listas aceptan `?page=2`; la de pedidos también `?estado=en_ruta`.
+Las listas aceptan `?page=2`. La de pedidos filtra con `?estado=`, `?numero=`, `?zona_id=`, `?desde=` y `?hasta=`
+(fecha de creación); la de clientes, con `?buscar=` (nombre, cédula o teléfono) y `?comercio_id=`.
+El usuario de un comercio solo trabaja con lo de su comercio: la API se lo fuerza aunque la petición diga otro.
+
+Datos de demostración del módulo de Clientes y Pedidos (8 clientes y 12 pedidos en estado "creado"; es
+idempotente y no borra nada): `php artisan db:seed --class=DemoPedidosSeeder`.
 
 Ejemplo:
 
