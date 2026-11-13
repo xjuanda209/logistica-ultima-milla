@@ -116,5 +116,12 @@ return [
         'latitud' => 'latitud',
         'longitud' => 'longitud',
         'activos' => 'activos',
+        'prioridad' => 'prioridad',
+        'resolucion' => 'resolución',
+        'nota_comercio' => 'nota para el comercio',
+        'pregunta' => 'pregunta',
+        'historial' => 'conversación',
+        'historial.*.rol' => 'autor del mensaje',
+        'historial.*.texto' => 'mensaje',
     ],
 ];

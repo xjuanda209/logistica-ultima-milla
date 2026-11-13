@@ -106,11 +106,19 @@ export const routes: Routes = [
           import('./features/incidencias/incidencias').then((m) => m.Incidencias),
       },
       {
-        path: 'asistente',
-        title: 'Asistente IA',
+        path: 'incidencias/:id',
+        title: 'Detalle de incidencia',
         canActivate: [rolGuard],
-        data: { roles: rolesDe('/asistente'), modulo: 'el módulo 5 (Incidencias)' },
-        loadComponent: enConstruccion,
+        data: { roles: rolesDe('/incidencias') },
+        loadComponent: () =>
+          import('./features/incidencias/incidencia-detalle').then((m) => m.IncidenciaDetalle),
+      },
+      {
+        path: 'asistente',
+        title: 'Asistente de IA',
+        canActivate: [rolGuard],
+        data: { roles: rolesDe('/asistente') },
+        loadComponent: () => import('./features/asistente/asistente').then((m) => m.Asistente),
       },
     ],
   },

@@ -180,13 +180,22 @@ test('evidencias e incidencias de la app exigen autenticación', function (strin
         ->assertJsonPath('error.codigo', 'NO_AUTENTICADO');
 })->with(['evidencias', 'incidencias']);
 
-test('solo el repartidor registra evidencias e incidencias desde la app', function (string $rol, string $ruta) {
+test('solo el repartidor registra evidencias', function (string $rol) {
     Sanctum::actingAs(Usuario::factory()->{$rol}()->create());
 
-    $this->postJson("/api/pedidos/{$this->pedido->id}/{$ruta}", [])
+    $this->postJson("/api/pedidos/{$this->pedido->id}/evidencias", [])
         ->assertForbidden()
         ->assertJsonPath('error.codigo', 'NO_AUTORIZADO');
-})->with(['administrador', 'operador', 'comercio'])->with(['evidencias', 'incidencias']);
+})->with(['administrador', 'operador', 'comercio']);
+
+// Administrador y operador sí registran incidencias, desde la web: ver IncidenciasTest.
+test('el comercio no registra incidencias desde la app', function () {
+    Sanctum::actingAs(Usuario::factory()->comercio()->create());
+
+    $this->postJson("/api/pedidos/{$this->pedido->id}/incidencias", [])
+        ->assertForbidden()
+        ->assertJsonPath('error.codigo', 'NO_AUTORIZADO');
+});
 
 test('el detalle trae evidencias e incidencias para consulta y el repartidor no ve la nota del comercio', function () {
     $this->pedido->evidencias()->create([

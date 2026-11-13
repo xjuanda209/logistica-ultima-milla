@@ -35,7 +35,7 @@ Levantar: backend `php artisan serve` (:8000) · web `npm start` (:4200) · móv
 Shared/   Enums/, Http/Middleware/CheckRole.php (alias "rol"), Errores/ (ManejadorErrores, ErrorApi),
           Validacion/ (UnicoSinMayusculas), Auth/ (login, logout, me)
 Modules/  Administracion (Usuario, Zona, Comercio, Configuracion) · Pedidos (Cliente, Pedido, LineaPedido,
-          HistorialPedido) · Despacho (Evidencia, panel) · Incidencias (TipoIncidencia, Incidencia) · Asistente
+          HistorialPedido) · Despacho (Evidencia, panel) · Incidencias (TipoIncidencia, Incidencia) · Asistente (ConsultaAsistente, IA/)
           Cada módulo: Models/, Controllers/, Resources/, Requests/ y routes.php (lo carga routes/api.php)
           Fuera de app/: database/migrations|factories|seeders y tests/Feature (Pest)
 ```
@@ -45,12 +45,12 @@ Modules/  Administracion (Usuario, Zona, Comercio, Configuracion) · Pedidos (Cl
 - **Respuestas**: API Resources. Uno: `{ "data": {...} }`; lista: `paginate(20)` → `{ "data": [...], "meta": {...} }`.
 - **Errores** (los arma `ManejadorErrores`, no los controladores):
   `{ "error": { "codigo": "VALIDACION", "mensaje": "Los datos enviados no son válidos.", "campos": { "correo": ["..."] } } }`
-  Códigos: `VALIDACION` 422, `NO_AUTENTICADO` 401, `NO_AUTORIZADO` 403, `NO_ENCONTRADO` 404, `CREDENCIALES_INVALIDAS` 401, `ERROR_INTERNO` 500 y, con 409, `NO_PUEDES_DESACTIVARTE`, `NO_PUEDES_CAMBIAR_TU_ROL`, `ULTIMO_ADMINISTRADOR`, `COMERCIO_INACTIVO`, `PEDIDO_NO_EDITABLE`, `TRANSICION_NO_PERMITIDA`, `MISMO_REPARTIDOR`, `REPARTIDOR_DESACTIVADO`, `REPARTIDOR_NO_DISPONIBLE`, `REPARTIDOR_FUERA_DE_ZONA`, `REPARTIDOR_AL_MAXIMO`, `FALTA_EVIDENCIA`, `FALTA_INCIDENCIA`, `PEDIDO_NO_ADMITE_EVIDENCIAS`, `PEDIDO_NO_ADMITE_INCIDENCIAS`.
+  Códigos: `VALIDACION` 422, `NO_AUTENTICADO` 401, `NO_AUTORIZADO` 403, `NO_ENCONTRADO` 404, `CREDENCIALES_INVALIDAS` 401, `ERROR_INTERNO` 500 y, con 409, `NO_PUEDES_DESACTIVARTE`, `NO_PUEDES_CAMBIAR_TU_ROL`, `ULTIMO_ADMINISTRADOR`, `COMERCIO_INACTIVO`, `PEDIDO_NO_EDITABLE`, `TRANSICION_NO_PERMITIDA`, `MISMO_REPARTIDOR`, `REPARTIDOR_DESACTIVADO`, `REPARTIDOR_NO_DISPONIBLE`, `REPARTIDOR_FUERA_DE_ZONA`, `REPARTIDOR_AL_MAXIMO`, `FALTA_EVIDENCIA`, `FALTA_INCIDENCIA`, `PEDIDO_NO_ADMITE_EVIDENCIAS`, `PEDIDO_NO_ADMITE_INCIDENCIAS`; y `ASISTENTE_NO_DISPONIBLE` 503.
   Regla de negocio: `throw new ErrorApi('PEDIDO_NO_EDITABLE', 'El pedido ya fue entregado.', 409);` y agrega aquí el código nuevo.
 - **Validación**: Form Requests; mensajes en `lang/es/validation.php` (agrega ahí reglas y `attributes` nuevos).
 - **Relaciones**: `with()` solo con las columnas del Resource; una relación sin cargar lanza error (`preventLazyLoading`).
 - **Estados e historial**: todo cambio de estado pasa por `Pedido::cambiarEstado()` (transiciones solo en `EstadoPedido::siguientes()`), que inserta en `historial_pedido` (nunca se edita); quién puede recibir un pedido, solo en `Usuario::motivoParaNoRecibir()`. Canal: `Canal::deLaPeticion($request)` (`X-Canal: movil`; sin encabezado, `web`). En `edicion` el detalle es JSON (`HistorialPedido::cambios()`). Número de pedido: `Pedido::siguienteNumero()`.
-- **CORS**: solo `localhost:4200` y `localhost:8100`.
+- **Incidencias y asistente**: flujo abierta → en_revision → resuelta solo en `EstadoIncidencia::siguiente()`; visibilidad con `Incidencia::scopeVisiblesPara()`. La IA se llama solo por la interfaz `ClienteIA` (`Asistente/IA`; proveedor según `IA_PROVEEDOR`); los datos que se le envían los arma y anonimiza `ContextoOperacion`. En pruebas: `ClienteIASimulado::instalar()`. **CORS**: solo `localhost:4200` y `localhost:8100`.
 
 ## Cómo hacer un CRUD (referencia: Zonas, en Administración; Usuarios para casos menos comunes)
 
@@ -66,7 +66,7 @@ Copia: `GuardarZonaRequest.php`, `ZonaController.php`, `ZonaResource.php`, `Admi
 
 ## Web (`web/src/app`) y guía de interfaz
 
-`core/` (api.service = única puerta a la API, auth, interceptor, guards, menu, modelos, etiquetas, mensajes, catalogos, titulo-pagina) · `layout/` · `shared/` · `features/` (login, panel, pedidos, clientes, incidencias, administracion, en-construccion) · `estilos/_variables.scss`.
+`core/` (api.service = única puerta a la API, auth, interceptor, guards, menu, modelos, etiquetas, mensajes, catalogos, titulo-pagina) · `layout/` · `shared/` · `features/` (login, panel, pedidos, clientes, despacho, incidencias, asistente, administracion, en-construccion) · `estilos/_variables.scss`.
 
 - **Mockups**: `docs/interfaces/mockups/INT-xx-*.png`; notas, paleta y **"Ajustes al modelo"** en `docs/interfaces/README.md`. Cada pantalla sigue su mockup; si choca con el modelo de 12 tablas, manda el modelo. Los círculos rojos numerados son anotaciones: no van en la app.
 - **Tema**: clases de Bootstrap y variables de `_variables.scss`; sin colores a mano ni librerías de componentes; íconos `bi-…`. Botones principales `#0B6E6E`; el naranja `#F2A33A` solo en el logo y la franja del menú activo.

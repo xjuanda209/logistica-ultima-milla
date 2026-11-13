@@ -200,15 +200,32 @@ export interface Cliente {
 
 export interface Incidencia {
   id: number;
+  pedido_id: number;
+  tipo_incidencia_id: number;
   descripcion: string;
+  foto_url: string | null;
   estado: EstadoIncidencia;
   prioridad: Prioridad | null;
   resolucion: string | null;
-  nota_comercio: string | null;
+  /** Una sola nota para el comercio (se edita, no se acumula). El repartidor no la recibe. */
+  nota_comercio?: string | null;
   created_at: string;
+  updated_at: string;
   pedido?: { id: number; numero: string };
   tipo?: Referencia;
+  /** Quién la registró. */
   usuario?: Referencia;
+}
+
+/** Respuesta del asistente: POST /asistente/consultas y POST /incidencias/{id}/resumen. */
+export interface RespuestaAsistente {
+  respuesta: string;
+}
+
+/** Mensaje de la conversación con el asistente, como lo recibe la API en "historial". */
+export interface MensajeAsistente {
+  rol: 'usuario' | 'asistente';
+  texto: string;
 }
 
 export interface ResumenPanel {

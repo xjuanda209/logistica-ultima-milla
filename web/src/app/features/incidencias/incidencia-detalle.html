@@ -1,0 +1,227 @@
+@if (cargando()) {
+  <p class="text-body-secondary">Cargando…</p>
+} @else if (error(); as mensaje) {
+  <app-tarjeta>
+    <app-estado-vacio
+      tono="error"
+      icono="bi-exclamation-octagon"
+      titulo="No se pudo cargar la incidencia"
+      [texto]="mensaje"
+    >
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="cargar()">
+          Reintentar
+        </button>
+        <a class="btn btn-outline-secondary" routerLink="/incidencias">Volver a incidencias</a>
+      </div>
+    </app-estado-vacio>
+  </app-tarjeta>
+} @else if (incidencia(); as i) {
+  <div class="d-grid gap-4">
+    <app-tarjeta>
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <h2 class="fs-3 fw-bold mb-0">Incidencia #{{ i.id }}</h2>
+        <div class="d-flex flex-wrap align-items-center gap-2 me-auto">
+          <app-badge-estado tipo="incidencia" [valor]="i.estado" />
+          @if (i.pedido; as pedido) {
+            <span class="text-body-secondary">
+              · Pedido <a [routerLink]="['/pedidos', pedido.id]">{{ pedido.numero }}</a>
+            </span>
+          }
+          <span class="text-body-secondary">· {{ i.tipo?.nombre }}</span>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-outline-secondary" routerLink="/incidencias">Volver a incidencias</a>
+          @if (puedeGestionar) {
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              [disabled]="resumiendo()"
+              (click)="resumir()"
+            >
+              <i class="bi bi-stars" aria-hidden="true"></i>
+              {{ resumiendo() ? 'Resumiendo…' : 'Resumir con el asistente' }}
+            </button>
+          }
+        </div>
+      </div>
+    </app-tarjeta>
+
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-7 d-grid gap-4">
+        <app-tarjeta titulo="Descripción">
+          <p class="texto-libre mb-3">{{ i.descripcion }}</p>
+          <div class="d-flex flex-wrap align-items-center gap-3">
+            @if (i.foto_url; as foto) {
+              <a [href]="foto" target="_blank" rel="noopener" title="Abrir la foto en otra pestaña">
+                <img
+                  class="rounded border object-fit-cover"
+                  width="120"
+                  height="96"
+                  alt="Foto adjunta a la incidencia"
+                  [src]="foto"
+                />
+              </a>
+            }
+            <span class="text-body-secondary">
+              {{ i.foto_url ? 'Foto adjunta' : 'Sin foto' }} · registrada por
+              {{ i.usuario?.nombre }} · {{ i.created_at | date: 'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+        </app-tarjeta>
+
+        <app-tarjeta titulo="Nota para el comercio">
+          @if (i.nota_comercio; as vigente) {
+            <div class="bg-body-secondary rounded p-3 mb-3">
+              <div class="small text-body-secondary">
+                Nota vigente · {{ i.updated_at | date: 'dd/MM HH:mm' }}
+              </div>
+              <div class="texto-libre">{{ vigente }}</div>
+            </div>
+          } @else if (!puedeGestionar) {
+            <p class="text-body-secondary mb-0">Todavía no hay una nota para el comercio.</p>
+          }
+
+          @if (puedeGestionar) {
+            <form (ngSubmit)="guardarNota()">
+              <label class="visually-hidden" for="incidencia-nota">Nota para el comercio</label>
+              <textarea
+                id="incidencia-nota"
+                name="nota_comercio"
+                class="form-control"
+                rows="3"
+                maxlength="1000"
+                placeholder="Escribe la nota que verá el comercio…"
+                [class.is-invalid]="errores()['nota_comercio']"
+                [(ngModel)]="nota"
+              ></textarea>
+              <app-error-campo [mensajes]="errores()['nota_comercio']" />
+              <div class="form-text">
+                Hay una sola nota por incidencia: al guardar se reemplaza la anterior.
+              </div>
+              <button type="submit" class="btn btn-primary mt-3" [disabled]="guardando() === 'nota'">
+                {{ guardando() === 'nota' ? 'Guardando…' : 'Guardar nota' }}
+              </button>
+            </form>
+          }
+        </app-tarjeta>
+      </div>
+
+      <div class="col-lg-5 d-grid gap-4">
+        <app-tarjeta titulo="Prioridad">
+          @if (puedeGestionar) {
+            <label class="visually-hidden" for="incidencia-prioridad">Prioridad</label>
+            <select
+              id="incidencia-prioridad"
+              name="prioridad"
+              class="form-select"
+              [class.is-invalid]="errores()['prioridad']"
+              [disabled]="guardando() === 'prioridad'"
+              [(ngModel)]="prioridad"
+              (ngModelChange)="cambiarPrioridad()"
+            >
+              @if (!i.prioridad) {
+                <option value="" disabled>Sin asignar</option>
+              }
+              @for (opcion of listaPrioridades; track opcion) {
+                <option [value]="opcion">{{ prioridades[opcion].texto }}</option>
+              }
+            </select>
+            <app-error-campo [mensajes]="errores()['prioridad']" />
+          } @else if (i.prioridad) {
+            <app-badge-estado tipo="prioridad" [valor]="i.prioridad" />
+          } @else {
+            <span class="text-body-secondary">Sin asignar</span>
+          }
+        </app-tarjeta>
+
+        <app-tarjeta titulo="Estado">
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            @for (estado of flujo; track estado) {
+              @if (!$first) {
+                <i class="bi bi-arrow-right text-body-secondary" aria-hidden="true"></i>
+              }
+              <span [class.opacity-50]="estado !== i.estado">
+                <app-badge-estado tipo="incidencia" [valor]="estado" />
+              </span>
+              @if (estado === i.estado) {
+                <span class="visually-hidden">(estado actual)</span>
+              }
+            }
+          </div>
+
+          @if (avisoEstado(); as aviso) {
+            <div class="alert alert-warning mt-3 mb-0" role="alert">{{ aviso }}</div>
+          }
+
+          @if (puedeGestionar && i.estado !== 'resuelta') {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              @if (i.estado === 'abierta') {
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="guardando() === 'estado'"
+                  (click)="pasarA('en_revision')"
+                >
+                  Pasar a en revisión
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="guardando() === 'estado'"
+                  (click)="pasarA('resuelta')"
+                >
+                  Marcar como resuelta
+                </button>
+              }
+            </div>
+          }
+        </app-tarjeta>
+
+        @if (i.estado === 'resuelta') {
+          <app-tarjeta titulo="Resolución">
+            <p class="texto-libre mb-0">{{ i.resolucion }}</p>
+          </app-tarjeta>
+        } @else if (puedeGestionar && i.estado === 'en_revision') {
+          <app-tarjeta titulo="Resolución *">
+            <label class="visually-hidden" for="incidencia-resolucion">Resolución</label>
+            <textarea
+              id="incidencia-resolucion"
+              name="resolucion"
+              class="form-control"
+              rows="3"
+              maxlength="1000"
+              placeholder="Cómo se resolvió la incidencia…"
+              [class.is-invalid]="errores()['resolucion']"
+              [(ngModel)]="resolucion"
+            ></textarea>
+            <app-error-campo [mensajes]="errores()['resolucion']" />
+            <div class="form-text">Es obligatoria para marcar la incidencia como resuelta.</div>
+          </app-tarjeta>
+        }
+
+        @if (resumen() || resumiendo() || errorResumen()) {
+          <app-tarjeta titulo="Resumen del asistente">
+            <span acciones class="badge text-bg-light border">Solo informativo</span>
+            @if (resumiendo()) {
+              <p class="text-body-secondary mb-0" role="status">El asistente está resumiendo…</p>
+            } @else if (errorResumen(); as mensaje) {
+              <div
+                class="alert alert-danger d-flex flex-wrap align-items-center gap-2 mb-0"
+                role="alert"
+              >
+                <strong>{{ mensaje }}</strong>
+                <button type="button" class="btn btn-danger btn-sm" (click)="resumir()">
+                  Reintentar
+                </button>
+              </div>
+            } @else {
+              <p class="texto-libre mb-0">{{ resumen() }}</p>
+            }
+          </app-tarjeta>
+        }
+      </div>
+    </div>
+  </div>
+}

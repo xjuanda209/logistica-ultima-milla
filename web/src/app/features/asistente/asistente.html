@@ -1,0 +1,107 @@
+<div class="row g-4 align-items-start">
+  <div class="col-lg-8">
+    <section class="card" aria-labelledby="asistente-titulo">
+      <div class="card-body border-bottom d-flex flex-wrap align-items-center gap-2">
+        <h2 class="card-title mb-0 me-auto" id="asistente-titulo">Asistente de consulta</h2>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          [disabled]="enviando() || (mensajes().length === 0 && !error())"
+          (click)="nuevaConversacion()"
+        >
+          Nueva conversación
+        </button>
+      </div>
+
+      <div
+        #conversacion
+        class="card-body conversacion d-flex flex-column gap-3"
+        role="log"
+        aria-live="polite"
+        aria-label="Conversación con el asistente"
+      >
+        <div class="alert alert-info mb-0" role="note">
+          El asistente solo informa: no crea, modifica ni elimina datos. Las decisiones las tomas
+          tú.
+        </div>
+
+        @for (mensaje of mensajes(); track $index) {
+          @if (mensaje.rol === 'usuario') {
+            <div class="burbuja burbuja-usuario bg-primary text-white">
+              <span class="visually-hidden">Tú:</span>
+              {{ mensaje.texto }}
+            </div>
+          } @else {
+            <div class="burbuja burbuja-asistente bg-body-secondary">
+              <span class="visually-hidden">Asistente:</span>
+              {{ mensaje.texto }}
+            </div>
+          }
+        } @empty {
+          <p class="text-body-secondary text-center my-auto">
+            Pregunta por los pedidos o las incidencias de la operación, o elige un ejemplo.
+          </p>
+        }
+
+        @if (enviando()) {
+          <div class="burbuja burbuja-asistente bg-body-secondary text-body-secondary" role="status">
+            El asistente está consultando…
+          </div>
+        }
+
+        @if (error(); as aviso) {
+          <div
+            class="alert alert-danger d-flex flex-wrap align-items-center gap-2 mb-0"
+            role="alert"
+          >
+            <strong>{{ aviso }}</strong>
+            <button type="button" class="btn btn-danger btn-sm" (click)="reintentar()">
+              Reintentar
+            </button>
+          </div>
+        }
+      </div>
+
+      <form class="card-body border-top d-flex gap-2" (ngSubmit)="enviar()">
+        <label class="visually-hidden" for="asistente-pregunta">Tu pregunta</label>
+        <input
+          id="asistente-pregunta"
+          name="pregunta"
+          class="form-control"
+          maxlength="500"
+          autocomplete="off"
+          placeholder="Escribe tu pregunta sobre pedidos o incidencias…"
+          [(ngModel)]="pregunta"
+        />
+        <button type="submit" class="btn btn-primary" [disabled]="enviando() || !pregunta.trim()">
+          Enviar
+        </button>
+      </form>
+    </section>
+  </div>
+
+  <div class="col-lg-4">
+    <section class="card" aria-labelledby="asistente-ejemplos">
+      <div class="card-body">
+        <h2 class="card-title" id="asistente-ejemplos">Ejemplos</h2>
+        <div class="d-grid gap-2">
+          @for (ejemplo of ejemplos; track ejemplo) {
+            <button
+              type="button"
+              class="btn btn-light border text-start"
+              [disabled]="enviando()"
+              (click)="usarEjemplo(ejemplo)"
+            >
+              {{ ejemplo }}
+            </button>
+          }
+        </div>
+        <p class="text-body-secondary small mt-3 mb-0">
+          También puedes preguntar por un pedido: «Resume las incidencias del pedido PED-0001».
+          Las preguntas fuera de la operación se responden con: «Solo atiendo consultas sobre
+          pedidos e incidencias de la operación».
+        </p>
+      </div>
+    </section>
+  </div>
+</div>

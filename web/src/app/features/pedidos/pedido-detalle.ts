@@ -6,12 +6,20 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ESTADOS_PEDIDO, PRIORIDADES, mensajeDeError } from '../../core/etiquetas';
 import { MensajesService } from '../../core/mensajes.service';
-import { CambioPedido, EventoHistorial, Pedido, Prioridad, Respuesta } from '../../core/modelos';
+import {
+  CambioPedido,
+  EventoHistorial,
+  Incidencia,
+  Pedido,
+  Prioridad,
+  Respuesta,
+} from '../../core/modelos';
 import { BadgeEstado } from '../../shared/badge-estado';
 import { EstadoVacio } from '../../shared/estado-vacio';
 import { Tarjeta } from '../../shared/tarjeta';
 import { AsignarRepartidor } from '../despacho/asignar-repartidor';
 import { CancelarPedido } from '../despacho/cancelar-pedido';
+import { RegistrarIncidencia } from '../incidencias/registrar-incidencia';
 
 const CAMPOS: Record<CambioPedido['campo'], string> = {
   prioridad: 'Prioridad',
@@ -30,7 +38,7 @@ const TIPOS_EVIDENCIA = { foto_entrega: 'Foto de entrega', comprobante: 'Comprob
  * evidencias e incidencias. Botones: "Editar pedido" (en «Creado») y, solo para administrador y
  * operador, "Asignar repartidor" (en «Creado»), "Reasignar repartidor" (en «Asignado») y
  * "Cancelar pedido" (en ambos), que abren las ventanas de features/despacho (INT-09 e INT-10).
- * Registrar incidencia es del módulo Incidencias.
+ * Administrador y operador también registran incidencias (ventana INT-19 de features/incidencias).
  * Ajuste al modelo: se muestra quién creó el pedido y la fecha de última modificación, no quién modificó.
  */
 @Component({
@@ -43,6 +51,7 @@ const TIPOS_EVIDENCIA = { foto_entrega: 'Foto de entrega', comprobante: 'Comprob
     EstadoVacio,
     AsignarRepartidor,
     CancelarPedido,
+    RegistrarIncidencia,
   ],
   templateUrl: './pedido-detalle.html',
   styles: `
@@ -124,6 +133,8 @@ export class PedidoDetalle implements OnInit {
   // Ventanas de Despacho
   protected readonly asignando = signal(false);
   protected readonly cancelando = signal(false);
+  /** Ventana INT-19: registrar una incidencia del pedido (administrador y operador). */
+  protected readonly registrandoIncidencia = signal(false);
 
   ngOnInit(): void {
     this.cargar();
@@ -156,6 +167,13 @@ export class PedidoDetalle implements OnInit {
     this.cancelando.set(false);
     this.pedido.set(pedido);
     this.mensajes.exito(`Pedido ${pedido.numero} cancelado.`);
+  }
+
+  /** Se vuelve a pedir el pedido para que la incidencia nueva salga en su lista. */
+  protected alRegistrarIncidencia(incidencia: Incidencia): void {
+    this.registrandoIncidencia.set(false);
+    this.mensajes.exito(`Incidencia #${incidencia.id} registrada.`);
+    this.cargar();
   }
 
   protected nombreCampo(cambio: CambioPedido): string {

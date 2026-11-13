@@ -112,7 +112,7 @@ Lo que sobre se mueve a docs/guia-detallada.md.
 7. Pestañas de evidencias e incidencias del pedido, de solo lectura (INT-20). No se muestra nota_comercio.
 8. Perfil (INT-21): correo, rol, zona, interruptor de disponibilidad y Cerrar sesión.
 
-## [ ] Parte D — Incidencias y asistente de IA (mockups INT-12, INT-13, INT-14, INT-19 web)
+## [x] Parte D — Incidencias y asistente de IA (mockups INT-12, INT-13, INT-14, INT-19 web)
 1. Lista de incidencias.
    - Filtros por estado, tipo, prioridad y número de pedido.
    - Administrador y operador ven todas; el comercio solo las de sus pedidos.
