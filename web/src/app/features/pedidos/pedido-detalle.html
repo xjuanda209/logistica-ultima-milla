@@ -28,9 +28,20 @@
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-outline-secondary" routerLink="/pedidos">Volver a pedidos</a>
           @if (puedeEditar()) {
-            <a class="btn btn-primary" [routerLink]="['/pedidos', p.id, 'editar']">
+            <a
+              [class]="puedeDespachar ? 'btn btn-outline-primary' : 'btn btn-primary'"
+              [routerLink]="['/pedidos', p.id, 'editar']"
+            >
               Editar pedido
             </a>
+          }
+          @if (puedeAsignar()) {
+            <button type="button" class="btn btn-primary" (click)="asignando.set(true)">
+              {{ p.estado === 'asignado' ? 'Reasignar repartidor' : 'Asignar repartidor' }}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="cancelando.set(true)">
+              Cancelar pedido
+            </button>
           }
         </div>
       </div>
@@ -218,4 +229,19 @@
       </div>
     </div>
   </div>
+
+  @if (asignando()) {
+    <app-asignar-repartidor
+      [pedido]="p"
+      (cerrar)="asignando.set(false)"
+      (asignado)="alAsignar($event)"
+    />
+  }
+  @if (cancelando()) {
+    <app-cancelar-pedido
+      [pedido]="p"
+      (cerrar)="cancelando.set(false)"
+      (cancelado)="alCancelar($event)"
+    />
+  }
 }

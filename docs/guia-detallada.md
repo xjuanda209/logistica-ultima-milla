@@ -93,6 +93,8 @@ y un `routes.php`.
   Códigos existentes: `VALIDACION` (422), `NO_AUTENTICADO` (401), `NO_AUTORIZADO` (403), `NO_ENCONTRADO` (404),
   `CREDENCIALES_INVALIDAS` (401; también si la cuenta está desactivada, con el mismo mensaje), `NO_PUEDES_DESACTIVARTE` (409), `NO_PUEDES_CAMBIAR_TU_ROL` (409),
   `ULTIMO_ADMINISTRADOR` (409), `COMERCIO_INACTIVO` (409), `PEDIDO_NO_EDITABLE` (409),
+  `TRANSICION_NO_PERMITIDA` (409), `MISMO_REPARTIDOR` (409), `REPARTIDOR_DESACTIVADO` (409), `REPARTIDOR_NO_DISPONIBLE` (409),
+  `REPARTIDOR_FUERA_DE_ZONA` (409), `REPARTIDOR_AL_MAXIMO` (409),
   `ERROR_INTERNO` (500).
   Para un error de negocio: `throw new ErrorApi('PEDIDO_NO_EDITABLE', 'El pedido ya fue entregado.', 409);`
 - **Validación**: con Form Requests (o `$request->validate()` para filtros simples). Nunca validar a mano.

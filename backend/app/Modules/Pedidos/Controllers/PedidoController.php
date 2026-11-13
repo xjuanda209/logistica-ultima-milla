@@ -40,7 +40,7 @@ class PedidoController extends Controller
      *
      * @var list<string>
      */
-    private const RELACIONES_DETALLE = [
+    public const RELACIONES_DETALLE = [
         ...self::RELACIONES_LISTA,
         'creador:id,nombre',
         'lineas:id,pedido_id,producto,cantidad',

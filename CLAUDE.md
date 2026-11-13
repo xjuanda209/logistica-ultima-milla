@@ -45,11 +45,11 @@ Modules/  Administracion (Usuario, Zona, Comercio, Configuracion) · Pedidos (Cl
 - **Respuestas**: API Resources. Uno: `{ "data": {...} }`; lista: `paginate(20)` → `{ "data": [...], "meta": {...} }`.
 - **Errores** (los arma `ManejadorErrores`, no los controladores):
   `{ "error": { "codigo": "VALIDACION", "mensaje": "Los datos enviados no son válidos.", "campos": { "correo": ["..."] } } }`
-  Códigos: `VALIDACION` 422, `NO_AUTENTICADO` 401, `NO_AUTORIZADO` 403, `NO_ENCONTRADO` 404, `CREDENCIALES_INVALIDAS` 401, `ERROR_INTERNO` 500 y, con 409, `NO_PUEDES_DESACTIVARTE`, `NO_PUEDES_CAMBIAR_TU_ROL`, `ULTIMO_ADMINISTRADOR`, `COMERCIO_INACTIVO`, `PEDIDO_NO_EDITABLE`.
+  Códigos: `VALIDACION` 422, `NO_AUTENTICADO` 401, `NO_AUTORIZADO` 403, `NO_ENCONTRADO` 404, `CREDENCIALES_INVALIDAS` 401, `ERROR_INTERNO` 500 y, con 409, `NO_PUEDES_DESACTIVARTE`, `NO_PUEDES_CAMBIAR_TU_ROL`, `ULTIMO_ADMINISTRADOR`, `COMERCIO_INACTIVO`, `PEDIDO_NO_EDITABLE`, `TRANSICION_NO_PERMITIDA`, `MISMO_REPARTIDOR`, `REPARTIDOR_DESACTIVADO`, `REPARTIDOR_NO_DISPONIBLE`, `REPARTIDOR_FUERA_DE_ZONA`, `REPARTIDOR_AL_MAXIMO`.
   Regla de negocio: `throw new ErrorApi('PEDIDO_NO_EDITABLE', 'El pedido ya fue entregado.', 409);` y agrega aquí el código nuevo.
 - **Validación**: Form Requests; mensajes en `lang/es/validation.php` (agrega ahí reglas y `attributes` nuevos).
 - **Relaciones**: `with()` solo con las columnas del Resource; una relación sin cargar lanza error (`preventLazyLoading`).
-- **Historial**: todo cambio de estado de un pedido inserta en `historial_pedido` (nunca se edita). Canal: `Canal::deLaPeticion($request)` (`X-Canal: movil`; sin encabezado, `web`). En `edicion` el detalle es JSON (`HistorialPedido::cambios()`). Número de pedido: `Pedido::siguienteNumero()`.
+- **Estados e historial**: todo cambio de estado pasa por `Pedido::cambiarEstado()` (transiciones solo en `EstadoPedido::siguientes()`), que inserta en `historial_pedido` (nunca se edita); quién puede recibir un pedido, solo en `Usuario::motivoParaNoRecibir()`. Canal: `Canal::deLaPeticion($request)` (`X-Canal: movil`; sin encabezado, `web`). En `edicion` el detalle es JSON (`HistorialPedido::cambios()`). Número de pedido: `Pedido::siguienteNumero()`.
 - **CORS**: solo `localhost:4200` y `localhost:8100`.
 
 ## Cómo hacer un CRUD (referencia: Zonas, en Administración; Usuarios para casos menos comunes)

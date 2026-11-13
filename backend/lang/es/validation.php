@@ -107,5 +107,7 @@ return [
         'lineas.*.cantidad' => 'cantidad',
         'desde' => 'fecha desde',
         'hasta' => 'fecha hasta',
+        'motivo' => 'motivo',
+        'disponibilidad' => 'disponibilidad',
     ],
 ];

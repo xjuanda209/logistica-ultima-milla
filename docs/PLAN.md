@@ -27,7 +27,7 @@ Reduce CLAUDE.md (raíz) a máximo 80 líneas y backend/CLAUDE.md a máximo 60, 
 - la Guía de interfaz (componentes y mockups).
 Lo que sobre se mueve a docs/guia-detallada.md.
 
-## [ ] Parte A — Despacho (mockups INT-08, INT-09, INT-10, INT-11)
+## [x] Parte A — Despacho (mockups INT-08, INT-09, INT-10, INT-11)
 1. Máquina de estados en UN solo lugar.
    - Transiciones permitidas:
      - creado→asignado

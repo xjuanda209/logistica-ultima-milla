@@ -7,9 +7,11 @@ use App\Modules\Administracion\Models\Usuario;
 use App\Modules\Administracion\Models\Zona;
 use App\Modules\Despacho\Models\Evidencia;
 use App\Modules\Incidencias\Models\Incidencia;
+use App\Shared\Enums\Canal;
 use App\Shared\Enums\EstadoPedido;
 use App\Shared\Enums\Prioridad;
 use App\Shared\Enums\Rol;
+use App\Shared\Enums\TipoEvento;
 use Database\Factories\PedidoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -64,6 +66,37 @@ class Pedido extends Model
             Rol::Comercio => $query->where('pedidos.comercio_id', $usuario->comercio_id ?? 0),
             Rol::Repartidor => $query->where('pedidos.repartidor_id', $usuario->id),
         };
+    }
+
+    /**
+     * ÚNICA forma de cambiar el estado de un pedido: comprueba la transición en la máquina de
+     * estados (EstadoPedido::siguientes), guarda el pedido y deja el evento en el historial.
+     * Si la transición no se permite lanza TRANSICION_NO_PERMITIDA (409) y no cambia nada.
+     * Llámalo dentro de una transacción y con el pedido bloqueado (lockForUpdate).
+     */
+    public function cambiarEstado(
+        EstadoPedido $nuevo,
+        Usuario $usuario,
+        Canal $canal,
+        ?string $detalle = null,
+        TipoEvento $tipoEvento = TipoEvento::CambioEstado,
+    ): void {
+        $anterior = $this->estado;
+        $anterior->exigirPasoA($nuevo);
+
+        $this->estado = $nuevo;
+        $this->updated_at = now();
+        $this->save();
+
+        $this->historial()->create([
+            'usuario_id' => $usuario->id,
+            'tipo_evento' => $tipoEvento,
+            'estado_anterior' => $anterior,
+            'estado_nuevo' => $nuevo,
+            'detalle' => $detalle,
+            'canal' => $canal,
+            'created_at' => now(),
+        ]);
     }
 
     /**

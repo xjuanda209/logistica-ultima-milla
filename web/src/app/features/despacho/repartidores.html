@@ -1,0 +1,49 @@
+<app-tarjeta titulo="Repartidores y disponibilidad">
+  <app-tabla
+    titulo="Repartidores y disponibilidad"
+    [columnas]="columnas"
+    [cargando]="cargando()"
+    [error]="error()"
+    [vacia]="datos().length === 0"
+    textoVacio="Todavía no hay repartidores."
+    detalleVacio="El administrador los crea en Usuarios."
+    iconoVacio="bi-bicycle"
+    [meta]="meta()"
+    (cambiarPagina)="cargar($event)"
+    (reintentar)="cargar(1)"
+  >
+    @for (r of datos(); track r.id) {
+      <tr>
+        <td>
+          {{ r.correo }}
+          <div class="small text-body-secondary">{{ r.nombre }}</div>
+        </td>
+        <td>{{ r.zona?.nombre ?? '—' }}</td>
+        <td>
+          <div class="form-check form-switch mb-0">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              [id]="'disponibilidad-' + r.id"
+              [checked]="r.disponibilidad === 'disponible'"
+              [disabled]="guardandoId() === r.id"
+              (change)="cambiarDisponibilidad(r, $event)"
+            />
+            <label class="form-check-label" [for]="'disponibilidad-' + r.id">
+              {{ r.disponibilidad === 'disponible' ? 'Disponible' : 'No disponible' }}
+              <span class="visually-hidden">: {{ r.nombre }}</span>
+            </label>
+          </div>
+        </td>
+        <td>{{ r.pedidos_activos }} / {{ r.max_pedidos_activos }}</td>
+        <td><app-badge-estado tipo="activo" [valor]="r.activo" /></td>
+      </tr>
+    }
+  </app-tabla>
+
+  <div class="alert alert-info mt-3 mb-0" role="note">
+    Si un repartidor pasa a «No disponible» conserva los pedidos que ya tiene asignados, pero no
+    recibe asignaciones nuevas.
+  </div>
+</app-tarjeta>

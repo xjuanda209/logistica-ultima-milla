@@ -5,10 +5,13 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ESTADOS_PEDIDO, PRIORIDADES, mensajeDeError } from '../../core/etiquetas';
+import { MensajesService } from '../../core/mensajes.service';
 import { CambioPedido, EventoHistorial, Pedido, Prioridad, Respuesta } from '../../core/modelos';
 import { BadgeEstado } from '../../shared/badge-estado';
 import { EstadoVacio } from '../../shared/estado-vacio';
 import { Tarjeta } from '../../shared/tarjeta';
+import { AsignarRepartidor } from '../despacho/asignar-repartidor';
+import { CancelarPedido } from '../despacho/cancelar-pedido';
 
 const CAMPOS: Record<CambioPedido['campo'], string> = {
   prioridad: 'Prioridad',
@@ -24,13 +27,23 @@ const TIPOS_EVIDENCIA = { foto_entrega: 'Foto de entrega', comprobante: 'Comprob
 
 /**
  * Detalle del pedido (INT-08): encabezado, datos, productos, historial (más reciente primero),
- * evidencias e incidencias. Este módulo solo pone el botón "Editar pedido" (en estado «Creado»);
- * asignar, registrar incidencia y cancelar son de Despacho e Incidencias.
+ * evidencias e incidencias. Botones: "Editar pedido" (en «Creado») y, solo para administrador y
+ * operador, "Asignar repartidor" (en «Creado»), "Reasignar repartidor" (en «Asignado») y
+ * "Cancelar pedido" (en ambos), que abren las ventanas de features/despacho (INT-09 e INT-10).
+ * Registrar incidencia es del módulo Incidencias.
  * Ajuste al modelo: se muestra quién creó el pedido y la fecha de última modificación, no quién modificó.
  */
 @Component({
   selector: 'app-pedido-detalle',
-  imports: [DatePipe, RouterLink, BadgeEstado, Tarjeta, EstadoVacio],
+  imports: [
+    DatePipe,
+    RouterLink,
+    BadgeEstado,
+    Tarjeta,
+    EstadoVacio,
+    AsignarRepartidor,
+    CancelarPedido,
+  ],
   templateUrl: './pedido-detalle.html',
   styles: `
     /* Línea de tiempo del historial: un punto por evento unido por una línea vertical. */
@@ -76,6 +89,8 @@ const TIPOS_EVIDENCIA = { foto_entrega: 'Foto de entrega', comprobante: 'Comprob
 })
 export class PedidoDetalle implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
+  private readonly mensajes = inject(MensajesService);
 
   /** Llega desde la URL (/pedidos/:id) gracias a withComponentInputBinding(). */
   readonly id = input.required<string>();
@@ -91,15 +106,24 @@ export class PedidoDetalle implements OnInit {
   /** El más reciente primero (la API lo entrega en orden cronológico). */
   protected readonly historial = computed(() => [...(this.pedido()?.historial ?? [])].reverse());
 
-  private readonly puedeGestionar = inject(AuthService).tieneRol(
-    'administrador',
-    'operador',
-    'comercio',
-  );
+  private readonly puedeGestionar = this.auth.tieneRol('administrador', 'operador', 'comercio');
+  /** Asignar, reasignar y cancelar: el comercio no ve esos botones. */
+  protected readonly puedeDespachar = this.auth.tieneRol('administrador', 'operador');
   /** Solo se edita en «Creado»; el backend también lo exige. */
   protected readonly puedeEditar = computed(
     () => this.puedeGestionar && this.pedido()?.estado === 'creado',
   );
+
+  /** Asignar en «Creado», reasignar en «Asignado»; cancelar en los dos. El backend lo exige. */
+  protected readonly puedeAsignar = computed(() => {
+    const estado = this.pedido()?.estado;
+
+    return this.puedeDespachar && (estado === 'creado' || estado === 'asignado');
+  });
+
+  // Ventanas de Despacho
+  protected readonly asignando = signal(false);
+  protected readonly cancelando = signal(false);
 
   ngOnInit(): void {
     this.cargar();
@@ -119,6 +143,19 @@ export class PedidoDetalle implements OnInit {
         this.cargando.set(false);
       },
     });
+  }
+
+  /** La API devuelve el pedido completo después de asignarlo. */
+  protected alAsignar(pedido: Pedido): void {
+    this.asignando.set(false);
+    this.pedido.set(pedido);
+    this.mensajes.exito(`Pedido ${pedido.numero} asignado a ${pedido.repartidor?.nombre}.`);
+  }
+
+  protected alCancelar(pedido: Pedido): void {
+    this.cancelando.set(false);
+    this.pedido.set(pedido);
+    this.mensajes.exito(`Pedido ${pedido.numero} cancelado.`);
   }
 
   protected nombreCampo(cambio: CambioPedido): string {

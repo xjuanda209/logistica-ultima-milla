@@ -30,6 +30,25 @@ export interface Usuario {
   zona?: Referencia | null;
 }
 
+export type Disponibilidad = 'disponible' | 'no_disponible';
+
+/** Repartidor con su carga: GET /repartidores y GET /pedidos/{id}/repartidores. */
+export interface Repartidor {
+  id: number;
+  nombre: string;
+  correo: string;
+  activo: boolean;
+  disponibilidad: Disponibilidad | null;
+  zona_id: number | null;
+  zona?: Referencia | null;
+  /** Pedidos en asignado, recogido o en ruta. Se muestra como "1 / 3". */
+  pedidos_activos: number;
+  max_pedidos_activos: number;
+  /** Solo en los candidatos de un pedido: si puede recibirlo y, si no, por qué. */
+  elegible?: boolean;
+  motivo?: string | null;
+}
+
 export interface Zona {
   id: number;
   nombre: string;

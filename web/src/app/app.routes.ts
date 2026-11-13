@@ -93,8 +93,9 @@ export const routes: Routes = [
         path: 'repartidores',
         title: 'Repartidores',
         canActivate: [rolGuard],
-        data: { roles: rolesDe('/repartidores'), modulo: 'el módulo 3 (Despacho)' },
-        loadComponent: enConstruccion,
+        data: { roles: rolesDe('/repartidores') },
+        loadComponent: () =>
+          import('./features/despacho/repartidores').then((m) => m.Repartidores),
       },
       {
         path: 'incidencias',
