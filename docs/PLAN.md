@@ -18,7 +18,7 @@ Cómo se usa: en cada sesión haz SOLO la primera parte que no esté marcada [x]
 
 ---
 
-## [ ] Parte 0 — CLAUDE.md corto
+## [x] Parte 0 — CLAUDE.md corto
 Reduce CLAUDE.md (raíz) a máximo 80 líneas y backend/CLAUDE.md a máximo 60, sin perder:
 - las reglas de seguridad de la base;
 - la estructura de carpetas;
