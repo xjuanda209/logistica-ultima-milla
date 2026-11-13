@@ -30,8 +30,13 @@ php artisan key:generate
 Abre `backend/.env` y escribe en `DB_PASSWORD` la contraseña de Neon (pídesela al equipo; **nunca** la subas a Git).
 
 ```bash
+php artisan storage:link    # una sola vez: publica las fotos de evidencias e incidencias
 php artisan serve
 ```
+
+> Las fotos se guardan en `backend/storage/app/public` (cada computador tiene las suyas; no van a Git).
+> El backend acepta imágenes de hasta 5 MB, pero PHP trae `upload_max_filesize = 2M`: súbelo a `5M`
+> en tu `php.ini` (`php --ini` dice dónde está) si vas a probar con fotos grandes.
 
 > **La base de datos ya está creada y con datos.** No ejecutes `migrate --seed` otra vez y **nunca** ejecutes
 > `migrate:fresh`, `migrate:reset`, `migrate:refresh`, `migrate:rollback` ni `db:wipe`: la base es compartida.

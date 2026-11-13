@@ -10,3 +10,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('rol:administrador,operador,comercio,repartidor')->group(function (): void {
     Route::get('/incidencias', [IncidenciaController::class, 'index']);
 });
+
+// El repartidor reporta incidencias de sus pedidos desde la app móvil (INT-19).
+Route::middleware('rol:repartidor')->group(function (): void {
+    Route::post('/pedidos/{id}/incidencias', [IncidenciaController::class, 'store'])->whereNumber('id');
+});

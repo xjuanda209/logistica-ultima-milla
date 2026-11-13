@@ -7,6 +7,12 @@ export type EstadoPedido = 'creado' | 'asignado' | 'recogido' | 'en_ruta' | 'ent
 
 export type Prioridad = 'baja' | 'media' | 'alta';
 
+export type EstadoIncidencia = 'abierta' | 'en_revision' | 'resuelta';
+
+export type TipoEvidencia = 'foto_entrega' | 'comprobante';
+
+export type Disponibilidad = 'disponible' | 'no_disponible';
+
 /** Referencia corta a otro registro (id + nombre). */
 export interface Referencia {
   id: number;
@@ -21,7 +27,8 @@ export interface Usuario {
   activo: boolean;
   comercio_id: number | null;
   zona_id: number | null;
-  disponibilidad: 'disponible' | 'no_disponible' | null;
+  disponibilidad: Disponibilidad | null;
+  zona?: Referencia | null;
 }
 
 export interface RespuestaLogin {
@@ -59,6 +66,26 @@ export interface EventoHistorial {
   created_at: string;
 }
 
+/** Evidencia dentro del detalle del pedido (solo lectura). */
+export interface EvidenciaPedido {
+  id: number;
+  tipo: TipoEvidencia;
+  url: string;
+  con_ubicacion: boolean;
+  created_at: string;
+}
+
+/** Incidencia dentro del detalle del pedido (solo lectura; sin la nota para el comercio). */
+export interface IncidenciaPedido {
+  id: number;
+  estado: EstadoIncidencia;
+  tipo: string | null;
+  descripcion: string;
+  prioridad: Prioridad | null;
+  foto_url: string | null;
+  created_at: string;
+}
+
 export interface Pedido {
   id: number;
   numero: string;
@@ -75,6 +102,20 @@ export interface Pedido {
   zona?: Referencia;
   lineas?: LineaPedido[];
   historial?: EventoHistorial[];
+  evidencias?: EvidenciaPedido[];
+  incidencias?: IncidenciaPedido[];
+}
+
+export interface TipoIncidencia {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
+/** Respuesta de PUT /repartidores/{id}/disponibilidad. */
+export interface Repartidor {
+  id: number;
+  disponibilidad: Disponibilidad;
 }
 
 /** Formato de error de la API: { error: { codigo, mensaje, campos } } */

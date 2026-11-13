@@ -1,2 +1,72 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+// Tema "Última Milla" para Ionic. Mismos valores que la web (web/src/estilos/_variables.scss)
+// y que docs/interfaces/README.md ("Estilo visual"). Para cambiar un color se cambia AQUÍ.
+
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/assets/fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root {
+  --ion-font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  // Primario: barra superior y botones principales (#0B6E6E).
+  --ion-color-primary: #0b6e6e;
+  --ion-color-primary-rgb: 11, 110, 110;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0a6161;
+  --ion-color-primary-tint: #237d7d;
+
+  // "Entregado" verde y "no entregado" rojo.
+  --ion-color-success: #2f855a;
+  --ion-color-success-rgb: 47, 133, 90;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #29754f;
+  --ion-color-success-tint: #44916b;
+
+  --ion-color-danger: #c53030;
+  --ion-color-danger-rgb: 197, 48, 48;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #ad2a2a;
+  --ion-color-danger-tint: #cb4545;
+
+  --ion-color-medium: #5f6e75;
+  --ion-color-medium-rgb: 95, 110, 117;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #546167;
+  --ion-color-medium-tint: #6f7d83;
+
+  // Fondo gris claro de la página; las tarjetas son blancas (ver global.scss).
+  --ion-background-color: #f3f6f7;
+  --ion-background-color-rgb: 243, 246, 247;
+  --ion-text-color: #1b2a31;
+  --ion-text-color-rgb: 27, 42, 49;
+  --ion-tab-bar-background: #ffffff;
+  --ion-tab-bar-color: #5f6e75;
+  --ion-tab-bar-color-selected: #0b6e6e;
+  --ion-toolbar-background: #ffffff;
+
+  // Colores propios de la app (los usan las clases de global.scss).
+  --lum-texto-suave: #5f6e75;
+  --lum-borde: #d7dfe2;
+  --lum-naranja: #f2a33a;
+  --lum-exito-fondo: #e3f4ea;
+  --lum-exito-borde: #b7dfc6;
+  --lum-exito-texto: #1f6b45;
+  --lum-error-fondo: #fde8e8;
+  --lum-error-borde: #f5b8b8;
+  --lum-error-texto: #9b2c2c;
+  --lum-alerta-fondo: #fcf0d9;
+  --lum-alerta-borde: #f1d39b;
+  --lum-alerta-texto: #87570f;
+  --lum-info-fondo: #e4eef9;
+  --lum-info-borde: #bcd3ee;
+  --lum-info-texto: #1f4f82;
+}

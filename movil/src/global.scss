@@ -1,37 +1,261 @@
 /*
- * App Global CSS
- * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
+ * Estilos globales de la app del repartidor. Los colores salen de theme/variables.scss.
+ * Clases para armar una pantalla como los mockups (docs/interfaces/mockups/INT-15 a INT-21):
+ *   .tarjeta            bloque blanco con borde y esquinas redondeadas
+ *   .aviso + .aviso-error | .aviso-alerta | .aviso-info | .aviso-exito    mensaje dentro de la página
+ *   .etiqueta-campo y .caja   etiqueta encima de un ion-input / ion-textarea / ion-select con borde
+ *   .error-campo        error de validación debajo de un campo
+ *   .chip + .chip-exito | .chip-alerta | .chip-gris   píldora informativa
+ *   .texto-suave        texto gris secundario
  */
 
 /* Core CSS required for Ionic components to work properly */
-@import "@ionic/angular/css/core.css";
+@import '@ionic/angular/css/core.css';
 
 /* Basic CSS for apps built with Ionic */
-@import "@ionic/angular/css/normalize.css";
-@import "@ionic/angular/css/structure.css";
-@import "@ionic/angular/css/typography.css";
-@import "@ionic/angular/css/display.css";
+@import '@ionic/angular/css/normalize.css';
+@import '@ionic/angular/css/structure.css';
+@import '@ionic/angular/css/typography.css';
+@import '@ionic/angular/css/display.css';
 
 /* Optional CSS utils that can be commented out */
-@import "@ionic/angular/css/padding.css";
-@import "@ionic/angular/css/float-elements.css";
-@import "@ionic/angular/css/text-alignment.css";
-@import "@ionic/angular/css/text-transformation.css";
-@import "@ionic/angular/css/flex-utils.css";
+@import '@ionic/angular/css/padding.css';
+@import '@ionic/angular/css/float-elements.css';
+@import '@ionic/angular/css/text-alignment.css';
+@import '@ionic/angular/css/text-transformation.css';
+@import '@ionic/angular/css/flex-utils.css';
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
+/* Los mockups son de tema claro: no se carga la paleta oscura de Ionic. */
 
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+ion-title {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+/* Botones grandes: mínimo 48 × 48 dp, texto sin mayúsculas forzadas. */
+ion-button {
+  min-height: 48px;
+  min-width: 48px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: none;
+  letter-spacing: 0;
+  --border-radius: 12px;
+  --box-shadow: none;
+}
+
+ion-button.boton-grande {
+  min-height: 56px;
+  font-size: 1.0625rem;
+}
+
+ion-back-button {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+ion-tab-button {
+  min-height: 48px;
+  font-weight: 600;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+h3 {
+  margin: 0 0 2px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+p {
+  margin: 0;
+}
+
+.texto-suave {
+  color: var(--lum-texto-suave);
+}
+
+.tarjeta {
+  display: block;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--lum-borde);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ion-text-color);
+  text-decoration: none;
+  line-height: 1.45;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fila-botones {
+  display: flex;
+  gap: 12px;
+
+  ion-button {
+    flex: 1;
+    margin: 0;
+  }
+}
+
+.aviso {
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  line-height: 1.45;
+
+  ion-button {
+    --background: #fff;
+    --color: var(--ion-text-color);
+    --border-color: var(--lum-borde);
+    --border-width: 1px;
+    --border-style: solid;
+  }
+}
+
+.aviso-error {
+  border-color: var(--lum-error-borde);
+  background: var(--lum-error-fondo);
+  color: var(--lum-error-texto);
+}
+
+.aviso-alerta {
+  border-color: var(--lum-alerta-borde);
+  background: var(--lum-alerta-fondo);
+  color: var(--lum-alerta-texto);
+}
+
+.aviso-info {
+  border-color: var(--lum-info-borde);
+  background: var(--lum-info-fondo);
+  color: var(--lum-info-texto);
+}
+
+.aviso-exito {
+  border-color: var(--lum-exito-borde);
+  background: var(--lum-exito-fondo);
+  color: var(--lum-exito-texto);
+}
+
+.etiqueta-campo {
+  display: block;
+  margin: 12px 0 6px;
+  color: var(--lum-texto-suave);
+  font-weight: 600;
+}
+
+.caja {
+  min-height: 48px;
+  border: 1px solid var(--lum-borde);
+  border-radius: 10px;
+  --background: #fff;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --highlight-color-focused: transparent;
+  --highlight-color-valid: transparent;
+  --highlight-color-invalid: transparent;
+  background: #fff;
+
+  &.con-error {
+    border-color: var(--ion-color-danger);
+    background: #fff7f7;
+    --background: #fff7f7;
+  }
+}
+
+ion-select.caja {
+  padding: 0 14px;
+}
+
+.error-campo {
+  margin-top: 4px;
+  color: var(--ion-color-danger);
+  font-size: 0.9375rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 50rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.chip-exito {
+  background: var(--lum-exito-fondo);
+  color: var(--lum-exito-texto);
+}
+
+.chip-alerta {
+  background: var(--lum-alerta-fondo);
+  color: var(--lum-alerta-texto);
+}
+
+.chip-gris {
+  background: #e8edf1;
+  color: #4a5a66;
+}
+
+.zona-foto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 150px;
+  margin-bottom: 8px;
+  border: 2px dashed #b3bfc4;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--lum-texto-suave);
+}
+
+.vista-previa {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.centrado {
+  padding: 48px 16px;
+  text-align: center;
+}
+
+/* Toasts de INT-22: verde de éxito y rojo de error, fondo suave y texto del mismo tono. */
+ion-toast.toast-exito {
+  --background: var(--lum-exito-fondo);
+  --color: var(--lum-exito-texto);
+  --border-color: var(--lum-exito-borde);
+}
+
+ion-toast.toast-error {
+  --background: var(--lum-error-fondo);
+  --color: var(--lum-error-texto);
+  --border-color: var(--lum-error-borde);
+}
+
+ion-toast.toast-exito,
+ion-toast.toast-error {
+  --border-style: solid;
+  --border-width: 1px;
+  --border-radius: 12px;
+  --box-shadow: 0 6px 18px rgba(27, 42, 49, 0.12);
+  font-size: 1rem;
+  font-weight: 500;
+}

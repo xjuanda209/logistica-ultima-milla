@@ -1,0 +1,106 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/tabs/pedidos/' + id()" text="" aria-label="Volver"></ion-back-button>
+    </ion-buttons>
+    <ion-title>No entregado</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  @if (error(); as mensaje) {
+    <app-sin-conexion [mensaje]="mensaje" (reintentar)="cargar()" />
+  }
+
+  @if (cargando()) {
+    <div class="centrado">
+      <ion-spinner aria-label="Cargando"></ion-spinner>
+    </div>
+  } @else if (pedido(); as p) {
+    <div class="tarjeta">
+      <p>
+        <strong>{{ p.numero }}</strong> ·
+        <app-insignia [valor]="p.estado" />
+      </p>
+      <p class="texto-suave">Para marcarlo como no entregado necesitas:</p>
+    </div>
+
+    <div class="tarjeta">
+      <div class="requisito">
+        @if (evidencias() > 0) {
+          <ion-icon name="checkmark-circle" color="success" aria-label="Cumplido"></ion-icon>
+          <p><strong>Evidencia</strong> · {{ evidencias() }} registrada{{ evidencias() === 1 ? '' : 's' }}</p>
+        } @else {
+          <ion-icon name="close-circle" color="danger" aria-label="Falta"></ion-icon>
+          <p><strong>Evidencia</strong> · falta registrarla</p>
+        }
+      </div>
+      <div class="requisito">
+        @if (incidencias() > 0) {
+          <ion-icon name="checkmark-circle" color="success" aria-label="Cumplido"></ion-icon>
+          <p><strong>Incidencia</strong> · {{ incidencias() }} registrada{{ incidencias() === 1 ? '' : 's' }}</p>
+        } @else {
+          <ion-icon name="close-circle" color="danger" aria-label="Falta"></ion-icon>
+          <p><strong>Incidencia</strong> · falta registrarla</p>
+        }
+      </div>
+      <div class="requisito">
+        @if (motivo().trim() !== '') {
+          <ion-icon name="checkmark-circle" color="success" aria-label="Cumplido"></ion-icon>
+          <p><strong>Motivo</strong> · escrito</p>
+        } @else {
+          <ion-icon name="close-circle" color="danger" aria-label="Falta"></ion-icon>
+          <p><strong>Motivo</strong> · falta escribirlo</p>
+        }
+      </div>
+    </div>
+
+    @if (evidencias() === 0 || incidencias() === 0) {
+      <div class="fila-botones">
+        @if (evidencias() === 0) {
+          <ion-button
+            fill="outline"
+            [routerLink]="['/tabs/pedidos', p.id, 'evidencia']"
+            [queryParams]="{ volver: 'no-entregado' }"
+          >
+            Registrar evidencia
+          </ion-button>
+        }
+        @if (incidencias() === 0) {
+          <ion-button
+            fill="outline"
+            [routerLink]="['/tabs/pedidos', p.id, 'incidencia']"
+            [queryParams]="{ volver: 'no-entregado' }"
+          >
+            Registrar incidencia
+          </ion-button>
+        }
+      </div>
+    }
+
+    <label class="etiqueta-campo" for="motivo">Motivo del no entregado *</label>
+    <ion-textarea
+      id="motivo"
+      class="caja"
+      aria-label="Motivo del no entregado"
+      [rows]="4"
+      [maxlength]="500"
+      [ngModel]="motivo()"
+      (ngModelChange)="motivo.set($event ?? '')"
+    ></ion-textarea>
+
+    @if (errorFormulario() ?? falta(); as mensaje) {
+      <div class="aviso aviso-error ion-margin-top" role="alert">{{ mensaje }}</div>
+    }
+
+    <ion-button
+      expand="block"
+      color="danger"
+      class="boton-grande ion-margin-top"
+      [disabled]="falta() !== null || guardando()"
+      (click)="confirmar()"
+    >
+      {{ guardando() ? 'Guardando…' : 'Confirmar no entregado' }}
+    </ion-button>
+  }
+</ion-content>

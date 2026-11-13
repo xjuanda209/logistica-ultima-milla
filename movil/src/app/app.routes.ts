@@ -26,6 +26,22 @@ export const routes: Routes = [
         loadComponent: () => import('./pedidos/pedido-detalle.page').then((m) => m.PedidoDetallePage),
       },
       {
+        path: 'pedidos/:id/no-entregado',
+        loadComponent: () => import('./pedidos/no-entregado.page').then((m) => m.NoEntregadoPage),
+      },
+      {
+        path: 'pedidos/:id/evidencia',
+        loadComponent: () => import('./pedidos/evidencia.page').then((m) => m.EvidenciaPage),
+      },
+      {
+        path: 'pedidos/:id/incidencia',
+        loadComponent: () => import('./pedidos/incidencia.page').then((m) => m.IncidenciaPage),
+      },
+      {
+        path: 'pedidos/:id/registros',
+        loadComponent: () => import('./pedidos/registros.page').then((m) => m.RegistrosPage),
+      },
+      {
         path: 'perfil',
         loadComponent: () => import('./perfil/perfil.page').then((m) => m.PerfilPage),
       },

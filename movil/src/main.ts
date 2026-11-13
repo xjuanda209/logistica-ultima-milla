@@ -16,7 +16,8 @@ import { authInterceptor } from './app/core/auth.interceptor';
 bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    provideIonicAngular(),
+    // Modo Material en todos los dispositivos: es el aspecto de los mockups (INT-15 a INT-21).
+    provideIonicAngular({ mode: 'md' }),
     provideRouter(routes, withPreloading(PreloadAllModules), withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
   ],

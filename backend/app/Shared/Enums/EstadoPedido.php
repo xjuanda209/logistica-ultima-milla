@@ -74,6 +74,15 @@ enum EstadoPedido: string
     }
 
     /**
+     * Evidencias e incidencias del repartidor solo se registran con el pedido ya recogido y antes
+     * de cerrarlo: en recogido o en ruta.
+     */
+    public function admiteRegistrosDeEntrega(): bool
+    {
+        return in_array($this, [self::Recogido, self::EnRuta], true);
+    }
+
+    /**
      * Nombre para los mensajes de error (los de la interfaz están en la web y el móvil).
      */
     public function etiqueta(): string

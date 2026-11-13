@@ -79,7 +79,7 @@ Lo que sobre se mueve a docs/guia-detallada.md.
    - ninguna evidencia sin archivo.
    Pide confirmación antes de correrlo.
 
-## [ ] Parte C — App móvil del repartidor (mockups 00b, INT-01, INT-15 a INT-21, INT-22)
+## [x] Parte C — App móvil del repartidor (mockups 00b, INT-01, INT-15 a INT-21, INT-22)
 1. Tema de los mockups en las variables de Ionic.
    - Fuente Inter.
    - Barra superior #0B6E6E con texto blanco, tarjetas blancas.

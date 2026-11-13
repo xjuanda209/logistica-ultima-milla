@@ -45,15 +45,17 @@ class PedidoController extends Controller
         'creador:id,nombre',
         'lineas:id,pedido_id,producto,cantidad',
         'historial.usuario:id,nombre',
-        'incidencias:id,pedido_id,tipo_incidencia_id,estado,created_at',
+        'incidencias:id,pedido_id,tipo_incidencia_id,descripcion,ruta_foto,estado,prioridad,created_at',
         'incidencias.tipo:id,nombre',
-        'evidencias:id,pedido_id,tipo,latitud,longitud,created_at',
+        'evidencias:id,pedido_id,tipo,ruta_archivo,latitud,longitud,created_at',
     ];
 
     /**
      * GET /api/pedidos — lista paginada. Cada rol ve solo lo que le corresponde
      * (ver Pedido::scopeVisiblesPara), del más reciente al más antiguo. Filtros opcionales:
      *   ?estado=en_ruta
+     *   ?activos=1          solo asignado, recogido y en ruta, ordenados por el inicio de la franja
+     *                       ("Mis pedidos" de la app móvil)
      *   ?numero=P-0001      pedidos cuyo número contiene ese texto, sin distinguir mayúsculas
      *   ?zona_id=2
      *   ?comercio_id=1      (el panel; al comercio ya se le limita a los suyos)
@@ -66,6 +68,7 @@ class PedidoController extends Controller
     {
         $filtros = $request->validate([
             'estado' => ['nullable', Rule::enum(EstadoPedido::class)],
+            'activos' => ['nullable', 'boolean'],
             'numero' => ['nullable', 'string', 'max:20'],
             'zona_id' => ['nullable', 'integer'],
             'comercio_id' => ['nullable', 'integer'],
@@ -85,8 +88,11 @@ class PedidoController extends Controller
             ->when($filtros['hasta'] ?? null, fn ($query, string $hasta) => $query->where('created_at', '<=', Carbon::parse($hasta)->utc()))
             ->with(self::RELACIONES_LISTA)
             ->withExists(['incidencias as incidencia_abierta' => fn ($query) => $query->where('estado', EstadoIncidencia::Abierta)])
-            ->latest()
-            ->latest('id')
+            ->when(
+                $request->boolean('activos'),
+                fn ($query) => $query->whereIn('estado', EstadoPedido::activos())->orderBy('franja_inicio')->orderBy('id'),
+                fn ($query) => $query->latest()->latest('id'),
+            )
             ->paginate(20);
 
         return PedidoResource::collection($pedidos);

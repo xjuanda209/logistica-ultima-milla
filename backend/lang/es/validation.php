@@ -109,5 +109,12 @@ return [
         'hasta' => 'fecha hasta',
         'motivo' => 'motivo',
         'disponibilidad' => 'disponibilidad',
+        'estado' => 'estado',
+        'tipo' => 'tipo',
+        'archivo' => 'imagen',
+        'foto' => 'foto',
+        'latitud' => 'latitud',
+        'longitud' => 'longitud',
+        'activos' => 'activos',
     ],
 ];

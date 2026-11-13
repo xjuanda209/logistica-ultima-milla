@@ -157,6 +157,9 @@ export interface IncidenciaDePedido {
   id: number;
   estado: EstadoIncidencia;
   tipo: string | null;
+  descripcion: string;
+  prioridad: Prioridad | null;
+  foto_url: string | null;
   created_at: string;
 }
 
@@ -164,6 +167,7 @@ export interface IncidenciaDePedido {
 export interface EvidenciaDePedido {
   id: number;
   tipo: 'foto_entrega' | 'comprobante';
+  url: string;
   con_ubicacion: boolean;
   created_at: string;
 }
