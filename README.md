@@ -30,18 +30,52 @@ php artisan key:generate
 Abre `backend/.env` y escribe en `DB_PASSWORD` la contraseña de Neon (pídesela al equipo; **nunca** la subas a Git).
 
 ```bash
+php artisan storage:link    # una sola vez: publica las fotos de evidencias e incidencias
 php artisan serve
 ```
+
+> Las fotos se guardan en `backend/storage/app/public` (cada computador tiene las suyas; no van a Git).
+> El backend acepta imágenes de hasta 5 MB, pero PHP trae `upload_max_filesize = 2M`: súbelo a `5M`
+> en tu `php.ini` (`php --ini` dice dónde está) si vas a probar con fotos grandes.
 
 > **La base de datos ya está creada y con datos.** No ejecutes `migrate --seed` otra vez y **nunca** ejecutes
 > `migrate:fresh`, `migrate:reset`, `migrate:refresh`, `migrate:rollback` ni `db:wipe`: la base es compartida.
 > Cuando alguien agregue una migración nueva se aplica solo con `php artisan migrate`, avisando antes al equipo.
 
-Pruebas (usan SQLite en memoria, no tocan Neon):
+Pruebas (usan SQLite en memoria, no tocan Neon ni llaman a la IA):
 
 ```bash
 php artisan test
 ```
+
+### Asistente de IA (gratis)
+
+El asistente (menú "Asistente IA" y botón "Resumir con el asistente" de una incidencia) llama a una IA desde el
+backend. Se configura en `backend/.env`, sin tocar código:
+
+```env
+IA_PROVEEDOR=gemini      # gemini (por defecto) o groq
+IA_MODELO=               # vacío = modelo por defecto del proveedor
+IA_API_KEY=              # tu clave; nunca la subas a Git
+```
+
+- **Google Gemini (por defecto):** entra a <https://aistudio.google.com/apikey> con una cuenta de Google, pulsa
+  "Create API key" y copia la clave en `IA_API_KEY`. El plan gratuito no pide tarjeta. Modelo por defecto:
+  `gemini-flash-lite-latest` (el más rápido); para el Flash completo usa `IA_MODELO=gemini-flash-latest`
+  (en horas de mucha demanda puede tardar más de 30 s y el asistente dirá que no está disponible).
+- **Groq:** entra a <https://console.groq.com/keys>, crea una cuenta gratuita, pulsa "Create API Key" y copia la
+  clave en `IA_API_KEY`; pon además `IA_PROVEEDOR=groq`. Modelo por defecto: `llama-3.3-70b-versatile`.
+
+Después de cambiar el `.env`, reinicia `php artisan serve`. Si falta la clave, la IA tarda más de 30 segundos o
+el plan gratuito llega a su límite de peticiones, la aplicación muestra "El asistente no está disponible" con
+"Reintentar" (el motivo queda en `backend/storage/logs/laravel.log`).
+
+> **Windows: error de certificado SSL (`cURL error 60`).** PHP no trae los certificados raíz. Descarga
+> <https://curl.se/ca/cacert.pem>, guárdalo (por ejemplo en `C:\php\cacert.pem`) y en tu `php.ini` deja
+> `curl.cainfo = "C:\php\cacert.pem"` y `openssl.cafile = "C:\php\cacert.pem"`. Reinicia `php artisan serve`.
+
+Al asistente solo le llegan datos anonimizados: nunca el nombre, la cédula, el teléfono, el correo ni la
+dirección del cliente (los pedidos se identifican por su número). Solo informa: no modifica datos.
 
 ## 2. Web (http://localhost:4200)
 
@@ -93,14 +127,36 @@ Todos con la contraseña `password`.
 | POST   | `/api/clientes`      | administrador, operador, comercio |
 | PUT    | `/api/clientes/{id}` | administrador, operador, comercio |
 | GET    | `/api/incidencias`   | todos (según sus pedidos)         |
+| GET    | `/api/incidencias/{id}` | todos (según sus pedidos)      |
+| POST   | `/api/pedidos/{id}/incidencias` | administrador, operador, repartidor |
+| PUT    | `/api/incidencias/{id}/prioridad` | administrador, operador |
+| PUT    | `/api/incidencias/{id}/estado` | administrador, operador   |
+| PUT    | `/api/incidencias/{id}/nota` | administrador, operador     |
+| POST   | `/api/incidencias/{id}/resumen` | administrador, operador  |
+| POST   | `/api/asistente/consultas` | administrador, operador       |
 | GET    | `/api/panel/resumen` | administrador, operador, comercio |
+| GET    | `/api/panel/indicadores` | administrador, operador       |
 
-Las listas aceptan `?page=2`. La de pedidos filtra con `?estado=`, `?numero=`, `?zona_id=`, `?desde=` y `?hasta=`
-(fecha de creación); la de clientes, con `?buscar=` (nombre, cédula o teléfono) y `?comercio_id=`.
+Las listas aceptan `?page=2`. La de pedidos filtra con `?estado=`, `?numero=`, `?zona_id=`, `?comercio_id=`,
+`?desde=` y `?hasta=` (fecha de creación); la de clientes, con `?buscar=` (nombre, cédula o teléfono) y `?comercio_id=`.
+La de incidencias filtra con `?estado=`, `?tipo_incidencia_id=`, `?prioridad=` y `?numero=` (número de pedido).
 El usuario de un comercio solo trabaja con lo de su comercio: la API se lo fuerza aunque la petición diga otro.
+
+Una incidencia pasa de `abierta` a `en_revision` y de ahí a `resuelta` (`PUT .../estado` con `estado` y, para
+resolver, `resolucion`). El asistente recibe `{ "pregunta": "...", "historial": [...] }` y responde
+`{ "data": { "respuesta": "..." } }`; cada consulta queda en `consultas_asistente` como respondida o fallida.
 
 Datos de demostración del módulo de Clientes y Pedidos (8 clientes y 12 pedidos en estado "creado"; es
 idempotente y no borra nada): `php artisan db:seed --class=DemoPedidosSeeder`.
+
+Datos de demostración de la operación, para el panel y la app móvil (también idempotente y sin borrar nada):
+`php artisan db:seed --class=DemoOperacionSeeder`. Crea `repartidor2@` a `repartidor5@logistica.test` (contraseña
+`password`, en zonas distintas; el 3 y el 5 no disponibles), 15 pedidos en estados variados con su historial
+(3 quedan asignados a `repartidor@logistica.test`) e incidencias en los no entregados. No crea evidencias.
+
+El panel (`/api/panel/indicadores`) acepta `?desde=`, `?hasta=`, `?zona_id=`, `?comercio_id=` y `?estado=`, y devuelve
+los pedidos por estado, el % de entregas exitosas, el tiempo promedio de entrega en minutos y las incidencias por
+tipo, zona y repartidor. Un indicador sin base de cálculo llega en `null` ("Sin datos").
 
 Ejemplo:
 

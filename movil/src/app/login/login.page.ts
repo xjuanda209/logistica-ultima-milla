@@ -1,29 +1,44 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonInput,
-  IonItem,
-  IonList,
-  IonText,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
+import { IonButton, IonContent, IonHeader, IonInput, IonToolbar } from '@ionic/angular';
 
 import { AuthService } from '../core/auth.service';
 import { mensajeDeError } from '../core/etiquetas';
 
+/** Inicio de sesión (INT-01, versión móvil). */
 @Component({
   selector: 'app-login',
   templateUrl: 'login.page.html',
-  imports: [FormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonInput, IonButton, IonText],
+  styles: `
+    .barra-estado {
+      --min-height: 0;
+    }
+
+    .marca {
+      margin: 24px 0 20px;
+      text-align: center;
+    }
+
+    .logo {
+      margin: 0 0 4px;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #14313b;
+
+      span {
+        color: var(--lum-naranja);
+      }
+    }
+  `,
+  imports: [FormsModule, IonHeader, IonToolbar, IonContent, IonInput, IonButton],
 })
 export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  /** Llega en la URL (?sesion=vencida) cuando la API dejó de aceptar el token. */
+  readonly sesion = input<string>();
 
   protected correo = '';
   protected password = '';

@@ -1,48 +1,59 @@
 <ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Logística de Última Milla</ion-title>
-  </ion-toolbar>
+  <ion-toolbar color="primary" class="barra-estado"></ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <h1>Iniciar sesión</h1>
-  <p>Aplicación para repartidores</p>
+  <div class="marca">
+    <h1 class="logo">Última<span>Milla</span></h1>
+    <p class="texto-suave">App del repartidor</p>
+  </div>
+
+  @if (sesion() === 'vencida' && !error()) {
+    <div class="aviso aviso-alerta" role="status">Tu sesión venció. Inicia sesión de nuevo.</div>
+  }
 
   <form #formulario="ngForm" (ngSubmit)="entrar()">
-    <ion-list>
-      <ion-item>
-        <ion-input
-          name="correo"
-          type="email"
-          label="Correo"
-          labelPlacement="stacked"
-          autocomplete="username"
-          required
-          email
-          [(ngModel)]="correo"
-        ></ion-input>
-      </ion-item>
-      <ion-item>
-        <ion-input
-          name="password"
-          type="password"
-          label="Contraseña"
-          labelPlacement="stacked"
-          autocomplete="current-password"
-          required
-          [(ngModel)]="password"
-        ></ion-input>
-      </ion-item>
-    </ion-list>
+    <label class="etiqueta-campo" for="correo">Correo electrónico</label>
+    <ion-input
+      id="correo"
+      class="caja"
+      name="correo"
+      type="email"
+      aria-label="Correo electrónico"
+      autocomplete="username"
+      inputmode="email"
+      required
+      email
+      [(ngModel)]="correo"
+    ></ion-input>
+
+    <label class="etiqueta-campo" for="password">Contraseña</label>
+    <ion-input
+      id="password"
+      class="caja"
+      name="password"
+      type="password"
+      aria-label="Contraseña"
+      autocomplete="current-password"
+      required
+      [(ngModel)]="password"
+    ></ion-input>
 
     @if (error(); as mensaje) {
-    <ion-text color="danger">
-      <p role="alert">{{ mensaje }}</p>
-    </ion-text>
+      <div class="aviso aviso-error ion-margin-top" role="alert">{{ mensaje }}</div>
     }
 
-    <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="formulario.invalid || enviando()">
-      {{ enviando() ? 'Entrando…' : 'Entrar' }}
+    <ion-button
+      type="submit"
+      expand="block"
+      class="boton-grande ion-margin-top"
+      [disabled]="formulario.invalid || enviando()"
+    >
+      {{ enviando() ? 'Ingresando…' : 'Ingresar' }}
     </ion-button>
   </form>
+
+  <p class="texto-suave ion-text-center ion-margin-top">
+    ¿Olvidaste tu contraseña? Pide al administrador que la restablezca.
+  </p>
 </ion-content>

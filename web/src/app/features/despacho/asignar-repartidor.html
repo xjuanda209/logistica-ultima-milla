@@ -1,0 +1,124 @@
+<app-modal [titulo]="titulo()" [ancho]="true" (cerrar)="cerrar.emit()">
+  <form (ngSubmit)="confirmar()">
+    <ul class="nav nav-pills mb-3" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [class.active]="pestana() === 'propuesta'"
+          [attr.aria-selected]="pestana() === 'propuesta'"
+          (click)="pestana.set('propuesta')"
+        >
+          Propuesta
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [class.active]="pestana() === 'manual'"
+          [attr.aria-selected]="pestana() === 'manual'"
+          (click)="pestana.set('manual')"
+        >
+          Elegir manualmente
+        </button>
+      </li>
+    </ul>
+
+    @if (errorFormulario(); as mensaje) {
+      <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+    }
+
+    @if (cargando()) {
+      <p class="text-body-secondary">Cargando repartidores…</p>
+    } @else if (error(); as mensaje) {
+      <app-estado-vacio
+        tono="error"
+        icono="bi-exclamation-octagon"
+        titulo="No se pudieron cargar los repartidores"
+        [texto]="mensaje"
+        [compacto]="true"
+      >
+        <button type="button" class="btn btn-outline-secondary" (click)="cargar()">
+          Reintentar
+        </button>
+      </app-estado-vacio>
+    } @else {
+      @if (elegibles().length === 0) {
+        <div class="alert alert-warning" role="alert">
+          No hay repartidores disponibles para la zona del pedido.
+        </div>
+      }
+
+      @if (visibles().length > 0) {
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <caption class="visually-hidden">
+              Repartidores
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Repartidor</th>
+                <th scope="col">Zona</th>
+                <th scope="col">Disponibilidad</th>
+                <th scope="col">Pedidos activos</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of visibles(); track r.id) {
+                <tr [class.text-body-tertiary]="!r.elegible">
+                  <td [class.text-body-tertiary]="!r.elegible">
+                    <div class="form-check mb-0">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="repartidor"
+                        [id]="'repartidor-' + r.id"
+                        [checked]="elegido() === r.id"
+                        [disabled]="!r.elegible"
+                        (change)="elegido.set(r.id)"
+                      />
+                      <label class="form-check-label" [for]="'repartidor-' + r.id">
+                        {{ r.nombre }}
+                      </label>
+                    </div>
+                    @if (r.motivo) {
+                      <div class="small text-danger">{{ r.motivo }}</div>
+                    }
+                  </td>
+                  <td [class.text-body-tertiary]="!r.elegible">{{ r.zona?.nombre ?? '—' }}</td>
+                  <td [class.text-body-tertiary]="!r.elegible">
+                    {{ r.disponibilidad === 'disponible' ? 'Disponible' : 'No disponible' }}
+                  </td>
+                  <td [class.text-body-tertiary]="!r.elegible">
+                    {{ r.pedidos_activos }} / {{ r.max_pedidos_activos }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="text-body-secondary small mt-2 mb-0">
+          Ordenados de menor a mayor cantidad de pedidos activos.
+        </p>
+      } @else if (pestana() === 'manual') {
+        <p class="text-body-secondary mb-0">No hay repartidores con la cuenta activa.</p>
+      }
+    }
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" (click)="cerrar.emit()">
+        Cerrar
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="guardando() || cargando() || elegido() === null"
+      >
+        {{ guardando() ? 'Asignando…' : 'Confirmar asignación' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

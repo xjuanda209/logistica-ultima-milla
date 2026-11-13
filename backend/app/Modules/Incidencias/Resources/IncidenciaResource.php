@@ -3,6 +3,7 @@
 namespace App\Modules\Incidencias\Resources;
 
 use App\Modules\Incidencias\Models\Incidencia;
+use App\Shared\Enums\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,10 +23,12 @@ class IncidenciaResource extends JsonResource
             'tipo_incidencia_id' => $this->tipo_incidencia_id,
             'descripcion' => $this->descripcion,
             'ruta_foto' => $this->ruta_foto,
+            'foto_url' => $this->ruta_foto === null ? null : asset('storage/'.$this->ruta_foto),
             'estado' => $this->estado,
             'prioridad' => $this->prioridad,
             'resolucion' => $this->resolucion,
-            'nota_comercio' => $this->nota_comercio,
+            // La nota para el comercio no se le muestra al repartidor (INT-20).
+            'nota_comercio' => $this->when($request->user()?->rol !== Rol::Repartidor, $this->nota_comercio),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'pedido' => $this->whenLoaded('pedido', fn (): array => [

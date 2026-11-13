@@ -1,36 +1,58 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>Mis pedidos</ion-title>
+    <ion-title>Última Milla</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content class="ion-padding">
   <ion-refresher slot="fixed" (ionRefresh)="refrescar($event)">
-    <ion-refresher-content></ion-refresher-content>
+    <ion-refresher-content pullingText="Desliza para actualizar" refreshingText="Actualizando…"></ion-refresher-content>
   </ion-refresher>
 
-  @if (cargando()) {
-  <div class="ion-padding ion-text-center">
-    <ion-spinner aria-label="Cargando"></ion-spinner>
-  </div>
-  } @else if (error(); as mensaje) {
-  <ion-text color="danger">
-    <p class="ion-padding" role="alert">{{ mensaje }}</p>
-  </ion-text>
-  } @else if (pedidos().length === 0) {
-  <p class="ion-padding">No tienes pedidos asignados.</p>
-  } @else {
-  <ion-list>
-    @for (pedido of pedidos(); track pedido.id) {
-    <ion-item [routerLink]="['/tabs/pedidos', pedido.id]" detail="true">
-      <ion-label>
-        <h2>{{ pedido.numero }} · {{ pedido.cliente?.nombre }}</h2>
-        <p>{{ pedido.direccion }}, {{ pedido.barrio }}</p>
-        <p>{{ pedido.franja_inicio | date: 'dd/MM HH:mm' }} – {{ pedido.franja_fin | date: 'HH:mm' }}</p>
-      </ion-label>
-      <ion-badge slot="end" [color]="estados[pedido.estado].color"> {{ estados[pedido.estado].texto }} </ion-badge>
-    </ion-item>
+  <div class="fila encabezado">
+    <h2>Mis pedidos activos</h2>
+    @if (disponible()) {
+      <span class="chip chip-exito"><span class="punto" aria-hidden="true"></span>Disponible</span>
+    } @else {
+      <span class="chip chip-gris"><span class="punto" aria-hidden="true"></span>No disponible</span>
     }
-  </ion-list>
+  </div>
+
+  @if (error(); as mensaje) {
+    <app-sin-conexion [mensaje]="mensaje" (reintentar)="cargar()" />
+  }
+
+  @if (cargando()) {
+    <div class="centrado">
+      <ion-spinner aria-label="Cargando"></ion-spinner>
+    </div>
+  } @else if (pedidos().length === 0 && !error()) {
+    <div class="centrado">
+      <ion-icon name="cube-outline" class="icono-vacio" aria-hidden="true"></ion-icon>
+      <h2>No tienes pedidos asignados.</h2>
+      <p class="texto-suave">Cuando el operador te asigne un pedido aparecerá aquí.</p>
+    </div>
+  } @else if (pedidos().length > 0) {
+    <p class="texto-suave actualizado">
+      <ion-icon name="refresh-outline" aria-hidden="true"></ion-icon>
+      {{ actualizado() }} · ordenados por inicio de franja
+    </p>
+
+    @for (pedido of pedidos(); track pedido.id) {
+      <a class="tarjeta" [routerLink]="['/tabs/pedidos', pedido.id]">
+        <div class="fila">
+          <strong class="numero">{{ pedido.numero }}</strong>
+          <app-insignia [valor]="pedido.estado" />
+        </div>
+        <p>{{ pedido.direccion }} · {{ pedido.barrio }}</p>
+        <p class="fila franja">
+          <span class="texto-suave">
+            <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+            {{ pedido.franja_inicio | date: 'dd/MM HH:mm' }} – {{ pedido.franja_fin | date: 'HH:mm' }}
+          </span>
+          <app-insignia tipo="prioridad" prefijo="Prioridad" [valor]="pedido.prioridad" />
+        </p>
+      </a>
+    }
   }
 </ion-content>

@@ -28,9 +28,20 @@
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-outline-secondary" routerLink="/pedidos">Volver a pedidos</a>
           @if (puedeEditar()) {
-            <a class="btn btn-primary" [routerLink]="['/pedidos', p.id, 'editar']">
+            <a
+              [class]="puedeDespachar ? 'btn btn-outline-primary' : 'btn btn-primary'"
+              [routerLink]="['/pedidos', p.id, 'editar']"
+            >
               Editar pedido
             </a>
+          }
+          @if (puedeAsignar()) {
+            <button type="button" class="btn btn-primary" (click)="asignando.set(true)">
+              {{ p.estado === 'asignado' ? 'Reasignar repartidor' : 'Asignar repartidor' }}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="cancelando.set(true)">
+              Cancelar pedido
+            </button>
           }
         </div>
       </div>
@@ -109,9 +120,21 @@
         </app-tarjeta>
 
         <app-tarjeta titulo="Incidencias del pedido">
+          @if (puedeDespachar) {
+            <button
+              acciones
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              (click)="registrandoIncidencia.set(true)"
+            >
+              + Registrar incidencia
+            </button>
+          }
           @for (incidencia of p.incidencias ?? []; track incidencia.id) {
             <div class="d-flex flex-wrap align-items-center gap-2" [class.mt-2]="!$first">
-              <span>#{{ incidencia.id }} · {{ incidencia.tipo }}</span>
+              <a [routerLink]="['/incidencias', incidencia.id]">
+                #{{ incidencia.id }} · {{ incidencia.tipo }}
+              </a>
               <app-badge-estado tipo="incidencia" [valor]="incidencia.estado" />
               <span class="text-body-secondary small">
                 {{ incidencia.created_at | date: 'dd/MM HH:mm' }}
@@ -218,4 +241,26 @@
       </div>
     </div>
   </div>
+
+  @if (asignando()) {
+    <app-asignar-repartidor
+      [pedido]="p"
+      (cerrar)="asignando.set(false)"
+      (asignado)="alAsignar($event)"
+    />
+  }
+  @if (cancelando()) {
+    <app-cancelar-pedido
+      [pedido]="p"
+      (cerrar)="cancelando.set(false)"
+      (cancelado)="alCancelar($event)"
+    />
+  }
+  @if (registrandoIncidencia()) {
+    <app-registrar-incidencia
+      [pedido]="p"
+      (cerrar)="registrandoIncidencia.set(false)"
+      (registrada)="alRegistrarIncidencia($event)"
+    />
+  }
 }

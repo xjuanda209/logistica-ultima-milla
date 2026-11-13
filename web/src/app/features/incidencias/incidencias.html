@@ -1,30 +1,139 @@
-<app-tarjeta>
-  <app-tabla
-    titulo="Incidencias"
-    [columnas]="['Pedido', 'Tipo', 'Descripción', 'Reportó', 'Fecha', 'Prioridad', 'Estado']"
-    [cargando]="cargando()"
-    [error]="error()"
-    [vacia]="incidencias().length === 0"
-    textoVacio="No hay incidencias para mostrar."
-    iconoVacio="bi-exclamation-triangle"
-    [meta]="meta()"
-    (cambiarPagina)="cargar($event)"
-    (reintentar)="cargar(1)"
-  >
-    @for (incidencia of incidencias(); track incidencia.id) {
-      <tr>
-        <td>
-          @if (incidencia.pedido; as pedido) {
-            <a [routerLink]="['/pedidos', pedido.id]">{{ pedido.numero }}</a>
+<div class="d-grid gap-4">
+  <app-tarjeta>
+    <form class="row g-3 align-items-end" (ngSubmit)="cargar(1)">
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Estado"
+        para="filtro-estado"
+        [errores]="errores()['estado']"
+      >
+        <select id="filtro-estado" name="estado" class="form-select" [(ngModel)]="filtros.estado">
+          <option value="">Todos</option>
+          @for (opcion of listaEstados; track opcion) {
+            <option [value]="opcion">{{ estados[opcion].texto }}</option>
           }
-        </td>
-        <td>{{ incidencia.tipo?.nombre }}</td>
-        <td>{{ incidencia.descripcion }}</td>
-        <td>{{ incidencia.usuario?.nombre }}</td>
-        <td class="text-nowrap">{{ incidencia.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
-        <td><app-badge-estado tipo="prioridad" [valor]="incidencia.prioridad" /></td>
-        <td><app-badge-estado tipo="incidencia" [valor]="incidencia.estado" /></td>
-      </tr>
+        </select>
+      </app-campo>
+
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Tipo"
+        para="filtro-tipo"
+        [errores]="errores()['tipo_incidencia_id']"
+      >
+        <select
+          id="filtro-tipo"
+          name="tipo_incidencia_id"
+          class="form-select"
+          [(ngModel)]="filtros.tipo_incidencia_id"
+        >
+          <option value="">Todos</option>
+          @for (tipo of tipos(); track tipo.id) {
+            <option [value]="tipo.id">{{ tipo.nombre }}</option>
+          }
+        </select>
+      </app-campo>
+
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Prioridad"
+        para="filtro-prioridad"
+        [errores]="errores()['prioridad']"
+      >
+        <select
+          id="filtro-prioridad"
+          name="prioridad"
+          class="form-select"
+          [(ngModel)]="filtros.prioridad"
+        >
+          <option value="">Todas</option>
+          @for (opcion of listaPrioridades; track opcion) {
+            <option [value]="opcion">{{ prioridades[opcion].texto }}</option>
+          }
+        </select>
+      </app-campo>
+
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Número de pedido"
+        para="filtro-numero"
+        [errores]="errores()['numero']"
+      >
+        <input
+          id="filtro-numero"
+          name="numero"
+          type="search"
+          class="form-control"
+          maxlength="20"
+          placeholder="PED-0131"
+          [class.is-invalid]="errores()['numero']"
+          [(ngModel)]="filtros.numero"
+        />
+      </app-campo>
+
+      <div class="col-12 col-lg-auto d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        @if (hayFiltros()) {
+          <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">
+            Limpiar
+          </button>
+        }
+      </div>
+    </form>
+  </app-tarjeta>
+
+  <app-tarjeta>
+    <app-tabla
+      titulo="Incidencias"
+      [columnas]="columnas"
+      [cargando]="cargando()"
+      [error]="error()"
+      [vacia]="incidencias().length === 0"
+      [textoVacio]="
+        hayFiltros() ? 'Ninguna incidencia coincide con los filtros.' : 'No hay incidencias.'
+      "
+      [detalleVacio]="
+        hayFiltros() ? null : 'Las incidencias se registran desde el detalle de cada pedido.'
+      "
+      iconoVacio="bi-exclamation-triangle"
+      [meta]="meta()"
+      (cambiarPagina)="cargar($event)"
+      (reintentar)="cargar(1)"
+    >
+      @for (incidencia of incidencias(); track incidencia.id) {
+        <tr>
+          <td class="fw-bold text-nowrap">#{{ incidencia.id }}</td>
+          <td class="text-nowrap">
+            @if (incidencia.pedido; as pedido) {
+              <a [routerLink]="['/pedidos', pedido.id]">{{ pedido.numero }}</a>
+            }
+          </td>
+          <td>{{ incidencia.tipo?.nombre }}</td>
+          <td><app-badge-estado tipo="prioridad" [valor]="incidencia.prioridad" /></td>
+          <td><app-badge-estado tipo="incidencia" [valor]="incidencia.estado" /></td>
+          <td class="text-body-secondary">
+            {{ incidencia.usuario?.nombre }} · {{ incidencia.created_at | date: 'dd/MM HH:mm' }}
+          </td>
+          <td class="text-end">
+            <a
+              class="btn btn-outline-secondary btn-sm"
+              [routerLink]="['/incidencias', incidencia.id]"
+            >
+              Abrir
+            </a>
+          </td>
+        </tr>
+      }
+    </app-tabla>
+
+    @if (!error()) {
+      <p class="text-body-secondary small mt-3 mb-0">
+        @if (comercioPropio) {
+          Mostrando solo las incidencias de los pedidos de «{{ comercioPropio }}».
+        } @else {
+          Incidencias de la más reciente a la más antigua.
+        }
+      </p>
     }
-  </app-tabla>
-</app-tarjeta>
+  </app-tarjeta>
+</div>

@@ -30,6 +30,25 @@ export interface Usuario {
   zona?: Referencia | null;
 }
 
+export type Disponibilidad = 'disponible' | 'no_disponible';
+
+/** Repartidor con su carga: GET /repartidores y GET /pedidos/{id}/repartidores. */
+export interface Repartidor {
+  id: number;
+  nombre: string;
+  correo: string;
+  activo: boolean;
+  disponibilidad: Disponibilidad | null;
+  zona_id: number | null;
+  zona?: Referencia | null;
+  /** Pedidos en asignado, recogido o en ruta. Se muestra como "1 / 3". */
+  pedidos_activos: number;
+  max_pedidos_activos: number;
+  /** Solo en los candidatos de un pedido: si puede recibirlo y, si no, por qué. */
+  elegible?: boolean;
+  motivo?: string | null;
+}
+
 export interface Zona {
   id: number;
   nombre: string;
@@ -138,6 +157,9 @@ export interface IncidenciaDePedido {
   id: number;
   estado: EstadoIncidencia;
   tipo: string | null;
+  descripcion: string;
+  prioridad: Prioridad | null;
+  foto_url: string | null;
   created_at: string;
 }
 
@@ -145,6 +167,7 @@ export interface IncidenciaDePedido {
 export interface EvidenciaDePedido {
   id: number;
   tipo: 'foto_entrega' | 'comprobante';
+  url: string;
   con_ubicacion: boolean;
   created_at: string;
 }
@@ -177,20 +200,54 @@ export interface Cliente {
 
 export interface Incidencia {
   id: number;
+  pedido_id: number;
+  tipo_incidencia_id: number;
   descripcion: string;
+  foto_url: string | null;
   estado: EstadoIncidencia;
   prioridad: Prioridad | null;
   resolucion: string | null;
-  nota_comercio: string | null;
+  /** Una sola nota para el comercio (se edita, no se acumula). El repartidor no la recibe. */
+  nota_comercio?: string | null;
   created_at: string;
+  updated_at: string;
   pedido?: { id: number; numero: string };
   tipo?: Referencia;
+  /** Quién la registró. */
   usuario?: Referencia;
+}
+
+/** Respuesta del asistente: POST /asistente/consultas y POST /incidencias/{id}/resumen. */
+export interface RespuestaAsistente {
+  respuesta: string;
+}
+
+/** Mensaje de la conversación con el asistente, como lo recibe la API en "historial". */
+export interface MensajeAsistente {
+  rol: 'usuario' | 'asistente';
+  texto: string;
 }
 
 export interface ResumenPanel {
   total: number;
   por_estado: Record<EstadoPedido, number>;
+}
+
+/** Una barra de los gráficos del panel: nombre (tipo, zona o repartidor) y cantidad. */
+export interface ConteoPanel {
+  etiqueta: string;
+  valor: number;
+}
+
+/** GET /panel/indicadores (INT-04). Los indicadores sin base de cálculo vienen en null. */
+export interface IndicadoresPanel extends ResumenPanel {
+  porcentaje_exito: number | null;
+  tiempo_promedio_minutos: number | null;
+  incidencias: {
+    por_tipo: ConteoPanel[];
+    por_zona: ConteoPanel[];
+    por_repartidor: ConteoPanel[];
+  };
 }
 
 /** Formato de error de la API: { error: { codigo, mensaje, campos } } */

@@ -3,7 +3,7 @@ import type { Observable } from 'rxjs';
 import { catchError, finalize, of, tap } from 'rxjs';
 
 import { ApiService } from './api.service';
-import type { RespuestaLogin, Usuario } from './modelos';
+import type { Respuesta, RespuestaLogin, Usuario } from './modelos';
 
 const CLAVE_TOKEN = 'lum_token';
 const CLAVE_USUARIO = 'lum_usuario';
@@ -40,6 +40,25 @@ export class AuthService {
       catchError(() => of(null)),
       finalize(() => this.limpiarSesion()),
     );
+  }
+
+  /** Vuelve a pedir los datos del usuario (por ejemplo, si el operador le cambió la disponibilidad). */
+  refrescar(): Observable<Respuesta<Usuario>> {
+    return this.api.get<Respuesta<Usuario>>('/me').pipe(tap((respuesta) => this.guardarUsuario(respuesta.data)));
+  }
+
+  /** Cambia en la sesión local los datos que ya confirmó la API (por ejemplo la disponibilidad). */
+  actualizarUsuario(cambios: Partial<Usuario>): void {
+    const usuario = this._usuario();
+
+    if (usuario) {
+      this.guardarUsuario({ ...usuario, ...cambios });
+    }
+  }
+
+  private guardarUsuario(usuario: Usuario): void {
+    localStorage.setItem(CLAVE_USUARIO, JSON.stringify(usuario));
+    this._usuario.set(usuario);
   }
 
   limpiarSesion(): void {

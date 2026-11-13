@@ -14,6 +14,18 @@ return [
     |
     */
 
+    /*
+    | Asistente de IA (módulo Asistente). El proveedor se cambia en el .env, sin tocar código:
+    | IA_PROVEEDOR=gemini|groq, IA_MODELO (vacío = el modelo por defecto del proveedor) e IA_API_KEY.
+    */
+    'ia' => [
+        'proveedor' => env('IA_PROVEEDOR', 'gemini'),
+        'modelo' => env('IA_MODELO'),
+        'clave' => env('IA_API_KEY'),
+        // Segundos que se espera la respuesta antes de decir "El asistente no está disponible".
+        'tiempo_limite' => 30,
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

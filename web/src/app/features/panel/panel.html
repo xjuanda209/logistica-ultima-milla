@@ -1,26 +1,36 @@
 <div class="d-grid gap-4">
   <app-tarjeta>
     <form class="row g-3 align-items-end" (ngSubmit)="aplicar()">
-      <div class="col-sm-6 col-lg">
-        <label for="filtro-desde" class="form-label">Desde</label>
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Desde"
+        para="filtro-desde"
+        [errores]="errores()['desde']"
+      >
         <input
           id="filtro-desde"
           name="desde"
           type="date"
           class="form-control"
+          [class.is-invalid]="errores()['desde']"
           [(ngModel)]="filtros.desde"
         />
-      </div>
-      <div class="col-sm-6 col-lg">
-        <label for="filtro-hasta" class="form-label">Hasta</label>
+      </app-campo>
+      <app-campo
+        class="col-sm-6 col-lg"
+        etiqueta="Hasta"
+        para="filtro-hasta"
+        [errores]="errores()['hasta']"
+      >
         <input
           id="filtro-hasta"
           name="hasta"
           type="date"
           class="form-control"
+          [class.is-invalid]="errores()['hasta']"
           [(ngModel)]="filtros.hasta"
         />
-      </div>
+      </app-campo>
       <div class="col-sm-6 col-lg">
         <label for="filtro-zona" class="form-label">Zona</label>
         <select id="filtro-zona" name="zona_id" class="form-select" [(ngModel)]="filtros.zona_id">
@@ -54,10 +64,25 @@
         </select>
       </div>
       <div class="col-sm-6 col-lg-auto">
-        <button type="submit" class="btn btn-primary w-100">Aplicar</button>
+        <button type="submit" class="btn btn-primary w-100" [disabled]="cargando()">
+          Aplicar
+        </button>
       </div>
     </form>
   </app-tarjeta>
+
+  @if (error(); as mensaje) {
+    <div class="alert alert-danger d-flex flex-wrap align-items-center gap-3 mb-0" role="alert">
+      <span>{{ mensaje }}</span>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger ms-auto"
+        (click)="cargarIndicadores()"
+      >
+        Reintentar
+      </button>
+    </div>
+  }
 
   <div class="row g-4">
     <div class="col-xxl-8 d-grid gap-4 align-content-start">
@@ -65,14 +90,14 @@
         <ul class="list-unstyled d-flex flex-wrap justify-content-between gap-3 mb-0">
           @for (estado of estados; track estado) {
             <li class="text-center">
-              <div class="fs-2 fw-bold cifra" [class.text-body-secondary]="!conteos()">
-                {{ conteos()?.[estado] ?? '—' }}
+              <div class="fs-2 fw-bold cifra" [class.text-body-secondary]="!indicadores()">
+                {{ indicadores()?.por_estado?.[estado] ?? '—' }}
               </div>
               <app-badge-estado [valor]="estado" />
             </li>
           }
         </ul>
-        @if (!conteos()) {
+        @if (!cargando() && !indicadores()?.total) {
           <p class="small text-body-secondary text-center mt-3 mb-0">Sin datos para el periodo.</p>
         }
       </app-tarjeta>
@@ -95,14 +120,21 @@
         <app-tabla
           titulo="Pedidos del periodo"
           [columnas]="columnasPedidos"
+          [cargando]="cargandoPedidos()"
+          [error]="errorPedidos()"
           [vacia]="pedidos().length === 0"
           textoVacio="Sin datos"
-          detalleVacio="Aquí aparecerán los pedidos del periodo filtrado."
+          detalleVacio="No hay pedidos con los filtros aplicados."
           iconoVacio="bi-box-seam"
+          [meta]="meta()"
+          (cambiarPagina)="cargarPedidos($event)"
+          (reintentar)="cargarPedidos(1)"
         >
           @for (pedido of pedidos(); track pedido.id) {
             <tr>
-              <td>{{ pedido.numero }}</td>
+              <td>
+                <a class="fw-semibold" [routerLink]="['/pedidos', pedido.id]">{{ pedido.numero }}</a>
+              </td>
               <td>{{ pedido.comercio?.nombre }}</td>
               <td>{{ pedido.zona?.nombre }}</td>
               <td><app-badge-estado [valor]="pedido.estado" /></td>
@@ -122,13 +154,13 @@
     <div class="col-xxl-4">
       <div class="row g-4">
         <app-tarjeta class="col-lg-4 col-xxl-12" titulo="Incidencias por tipo">
-          <app-barras [datos]="incidenciasPorTipo()" />
+          <app-barras [datos]="indicadores()?.incidencias?.por_tipo ?? []" />
         </app-tarjeta>
         <app-tarjeta class="col-lg-4 col-xxl-12" titulo="Incidencias por zona">
-          <app-barras [datos]="incidenciasPorZona()" />
+          <app-barras [datos]="indicadores()?.incidencias?.por_zona ?? []" />
         </app-tarjeta>
         <app-tarjeta class="col-lg-4 col-xxl-12" titulo="Incidencias por repartidor">
-          <app-barras [datos]="incidenciasPorRepartidor()" />
+          <app-barras [datos]="indicadores()?.incidencias?.por_repartidor ?? []" />
         </app-tarjeta>
       </div>
     </div>

@@ -40,22 +40,25 @@ class PedidoController extends Controller
      *
      * @var list<string>
      */
-    private const RELACIONES_DETALLE = [
+    public const RELACIONES_DETALLE = [
         ...self::RELACIONES_LISTA,
         'creador:id,nombre',
         'lineas:id,pedido_id,producto,cantidad',
         'historial.usuario:id,nombre',
-        'incidencias:id,pedido_id,tipo_incidencia_id,estado,created_at',
+        'incidencias:id,pedido_id,tipo_incidencia_id,descripcion,ruta_foto,estado,prioridad,created_at',
         'incidencias.tipo:id,nombre',
-        'evidencias:id,pedido_id,tipo,latitud,longitud,created_at',
+        'evidencias:id,pedido_id,tipo,ruta_archivo,latitud,longitud,created_at',
     ];
 
     /**
      * GET /api/pedidos — lista paginada. Cada rol ve solo lo que le corresponde
      * (ver Pedido::scopeVisiblesPara), del más reciente al más antiguo. Filtros opcionales:
      *   ?estado=en_ruta
+     *   ?activos=1          solo asignado, recogido y en ruta, ordenados por el inicio de la franja
+     *                       ("Mis pedidos" de la app móvil)
      *   ?numero=P-0001      pedidos cuyo número contiene ese texto, sin distinguir mayúsculas
      *   ?zona_id=2
+     *   ?comercio_id=1      (el panel; al comercio ya se le limita a los suyos)
      *   ?desde= y ?hasta=   rango de la fecha de creación, ambos incluidos. Son instantes (fecha y
      *                       hora, idealmente en ISO con zona horaria): la web manda el inicio y el
      *                       fin del día en la hora local del usuario.
@@ -65,8 +68,10 @@ class PedidoController extends Controller
     {
         $filtros = $request->validate([
             'estado' => ['nullable', Rule::enum(EstadoPedido::class)],
+            'activos' => ['nullable', 'boolean'],
             'numero' => ['nullable', 'string', 'max:20'],
             'zona_id' => ['nullable', 'integer'],
+            'comercio_id' => ['nullable', 'integer'],
             'desde' => ['nullable', 'date'],
             'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
         ], [
@@ -78,12 +83,16 @@ class PedidoController extends Controller
             ->when($filtros['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
             ->when($filtros['numero'] ?? null, fn ($query, string $numero) => $query->whereLike('numero', "%{$numero}%"))
             ->when($filtros['zona_id'] ?? null, fn ($query, $zonaId) => $query->where('zona_id', $zonaId))
+            ->when($filtros['comercio_id'] ?? null, fn ($query, $comercioId) => $query->where('comercio_id', $comercioId))
             ->when($filtros['desde'] ?? null, fn ($query, string $desde) => $query->where('created_at', '>=', Carbon::parse($desde)->utc()))
             ->when($filtros['hasta'] ?? null, fn ($query, string $hasta) => $query->where('created_at', '<=', Carbon::parse($hasta)->utc()))
             ->with(self::RELACIONES_LISTA)
             ->withExists(['incidencias as incidencia_abierta' => fn ($query) => $query->where('estado', EstadoIncidencia::Abierta)])
-            ->latest()
-            ->latest('id')
+            ->when(
+                $request->boolean('activos'),
+                fn ($query) => $query->whereIn('estado', EstadoPedido::activos())->orderBy('franja_inicio')->orderBy('id'),
+                fn ($query) => $query->latest()->latest('id'),
+            )
             ->paginate(20);
 
         return PedidoResource::collection($pedidos);

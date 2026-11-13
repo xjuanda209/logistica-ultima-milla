@@ -30,7 +30,7 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $usuario->createToken('api')->plainTextToken,
-            'usuario' => new UsuarioResource($usuario->load('comercio:id,nombre')),
+            'usuario' => new UsuarioResource($usuario->load(['comercio:id,nombre', 'zona:id,nombre'])),
         ]);
     }
 
@@ -49,6 +49,6 @@ class AuthController extends Controller
      */
     public function me(Request $request): UsuarioResource
     {
-        return new UsuarioResource($request->user()->load('comercio:id,nombre'));
+        return new UsuarioResource($request->user()->load(['comercio:id,nombre', 'zona:id,nombre']));
     }
 }
