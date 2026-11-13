@@ -61,7 +61,7 @@ Lo que sobre se mueve a docs/guia-detallada.md.
    - Página Repartidores (INT-11): correo, zona, interruptor de disponibilidad y "activos / máximo".
 6. Detalle del pedido (INT-08): botones Asignar (en creado), Reasignar (en asignado) y Cancelar (en creado o asignado). El comercio no los ve.
 
-## [ ] Parte B — Panel y datos de demostración (mockup INT-04)
+## [x] Parte B — Panel y datos de demostración (mockup INT-04)
 1. Panel para administrador y operador, con datos reales.
    - Filtros: fechas de creación, zona, comercio y estado.
    - Indicadores:

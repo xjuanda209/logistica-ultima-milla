@@ -212,6 +212,23 @@ export interface ResumenPanel {
   por_estado: Record<EstadoPedido, number>;
 }
 
+/** Una barra de los gráficos del panel: nombre (tipo, zona o repartidor) y cantidad. */
+export interface ConteoPanel {
+  etiqueta: string;
+  valor: number;
+}
+
+/** GET /panel/indicadores (INT-04). Los indicadores sin base de cálculo vienen en null. */
+export interface IndicadoresPanel extends ResumenPanel {
+  porcentaje_exito: number | null;
+  tiempo_promedio_minutos: number | null;
+  incidencias: {
+    por_tipo: ConteoPanel[];
+    por_zona: ConteoPanel[];
+    por_repartidor: ConteoPanel[];
+  };
+}
+
 /** Formato de error de la API: { error: { codigo, mensaje, campos } } */
 export interface ErrorApi {
   error: {

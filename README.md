@@ -94,13 +94,23 @@ Todos con la contraseña `password`.
 | PUT    | `/api/clientes/{id}` | administrador, operador, comercio |
 | GET    | `/api/incidencias`   | todos (según sus pedidos)         |
 | GET    | `/api/panel/resumen` | administrador, operador, comercio |
+| GET    | `/api/panel/indicadores` | administrador, operador       |
 
-Las listas aceptan `?page=2`. La de pedidos filtra con `?estado=`, `?numero=`, `?zona_id=`, `?desde=` y `?hasta=`
-(fecha de creación); la de clientes, con `?buscar=` (nombre, cédula o teléfono) y `?comercio_id=`.
+Las listas aceptan `?page=2`. La de pedidos filtra con `?estado=`, `?numero=`, `?zona_id=`, `?comercio_id=`,
+`?desde=` y `?hasta=` (fecha de creación); la de clientes, con `?buscar=` (nombre, cédula o teléfono) y `?comercio_id=`.
 El usuario de un comercio solo trabaja con lo de su comercio: la API se lo fuerza aunque la petición diga otro.
 
 Datos de demostración del módulo de Clientes y Pedidos (8 clientes y 12 pedidos en estado "creado"; es
 idempotente y no borra nada): `php artisan db:seed --class=DemoPedidosSeeder`.
+
+Datos de demostración de la operación, para el panel y la app móvil (también idempotente y sin borrar nada):
+`php artisan db:seed --class=DemoOperacionSeeder`. Crea `repartidor2@` a `repartidor5@logistica.test` (contraseña
+`password`, en zonas distintas; el 3 y el 5 no disponibles), 15 pedidos en estados variados con su historial
+(3 quedan asignados a `repartidor@logistica.test`) e incidencias en los no entregados. No crea evidencias.
+
+El panel (`/api/panel/indicadores`) acepta `?desde=`, `?hasta=`, `?zona_id=`, `?comercio_id=` y `?estado=`, y devuelve
+los pedidos por estado, el % de entregas exitosas, el tiempo promedio de entrega en minutos y las incidencias por
+tipo, zona y repartidor. Un indicador sin base de cálculo llega en `null` ("Sin datos").
 
 Ejemplo:
 

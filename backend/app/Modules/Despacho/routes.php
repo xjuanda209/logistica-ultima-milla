@@ -15,6 +15,8 @@ Route::middleware('rol:administrador,operador,comercio')->group(function (): voi
 });
 
 Route::middleware('rol:administrador,operador')->group(function (): void {
+    Route::get('/panel/indicadores', [PanelController::class, 'indicadores']);
+
     Route::get('/pedidos/{id}/repartidores', [DespachoController::class, 'candidatos'])->whereNumber('id');
     Route::put('/pedidos/{id}/repartidor', [DespachoController::class, 'asignar'])->whereNumber('id');
     Route::put('/pedidos/{id}/cancelacion', [DespachoController::class, 'cancelar'])->whereNumber('id');

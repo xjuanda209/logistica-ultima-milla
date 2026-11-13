@@ -56,6 +56,7 @@ class PedidoController extends Controller
      *   ?estado=en_ruta
      *   ?numero=P-0001      pedidos cuyo número contiene ese texto, sin distinguir mayúsculas
      *   ?zona_id=2
+     *   ?comercio_id=1      (el panel; al comercio ya se le limita a los suyos)
      *   ?desde= y ?hasta=   rango de la fecha de creación, ambos incluidos. Son instantes (fecha y
      *                       hora, idealmente en ISO con zona horaria): la web manda el inicio y el
      *                       fin del día en la hora local del usuario.
@@ -67,6 +68,7 @@ class PedidoController extends Controller
             'estado' => ['nullable', Rule::enum(EstadoPedido::class)],
             'numero' => ['nullable', 'string', 'max:20'],
             'zona_id' => ['nullable', 'integer'],
+            'comercio_id' => ['nullable', 'integer'],
             'desde' => ['nullable', 'date'],
             'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
         ], [
@@ -78,6 +80,7 @@ class PedidoController extends Controller
             ->when($filtros['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
             ->when($filtros['numero'] ?? null, fn ($query, string $numero) => $query->whereLike('numero', "%{$numero}%"))
             ->when($filtros['zona_id'] ?? null, fn ($query, $zonaId) => $query->where('zona_id', $zonaId))
+            ->when($filtros['comercio_id'] ?? null, fn ($query, $comercioId) => $query->where('comercio_id', $comercioId))
             ->when($filtros['desde'] ?? null, fn ($query, string $desde) => $query->where('created_at', '>=', Carbon::parse($desde)->utc()))
             ->when($filtros['hasta'] ?? null, fn ($query, string $hasta) => $query->where('created_at', '<=', Carbon::parse($hasta)->utc()))
             ->with(self::RELACIONES_LISTA)

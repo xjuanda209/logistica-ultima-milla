@@ -21,6 +21,7 @@ import {
   camposDeError,
   mensajeDeFormulario,
 } from '../../core/etiquetas';
+import { finDelDia, inicioDelDia } from '../../core/fechas';
 import { EstadoPedido, Paginado, Pedido, Zona } from '../../core/modelos';
 import { BadgeEstado } from '../../shared/badge-estado';
 import { Campo } from '../../shared/campo';
@@ -158,24 +159,4 @@ export class PedidosLista implements OnInit {
   protected limpiar(): void {
     void this.router.navigate(['/pedidos']);
   }
-}
-
-/** "2026-11-01" (día del dispositivo) → instante en que empieza ese día, en ISO (UTC). */
-function inicioDelDia(dia: string | undefined): string | null {
-  return aIso(dia, 'T00:00:00');
-}
-
-/** "2026-11-09" → último instante de ese día en el dispositivo, en ISO (UTC). */
-function finDelDia(dia: string | undefined): string | null {
-  return aIso(dia, 'T23:59:59.999');
-}
-
-function aIso(dia: string | undefined, hora: string): string | null {
-  if (!dia || !/^\d{4}-\d{2}-\d{2}$/.test(dia)) {
-    return null;
-  }
-
-  const fecha = new Date(dia + hora);
-
-  return Number.isNaN(fecha.getTime()) ? null : fecha.toISOString();
 }
