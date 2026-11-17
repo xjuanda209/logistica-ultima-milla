@@ -65,7 +65,10 @@ class ConsultaController extends Controller
     private function preguntar(Usuario $usuario, string $datos, array $mensajes): JsonResponse
     {
         // El límite de 30 s es del cliente de IA; PHP no debe cortar la petición antes de que responda.
-        set_time_limit(config('services.ia.tiempo_limite') + 15);
+        // En consola (pruebas) PHP no tiene límite: ponerlo aquí cortaría el resto de la suite a los 45 s.
+        if (! app()->runningInConsole()) {
+            set_time_limit(config('services.ia.tiempo_limite') + 15);
+        }
 
         try {
             $respuesta = app(ClienteIA::class)->responder(ContextoOperacion::instrucciones($datos), $mensajes);

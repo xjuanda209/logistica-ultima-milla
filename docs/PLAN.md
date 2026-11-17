@@ -139,7 +139,7 @@ Lo que sobre se mueve a docs/guia-detallada.md.
 4. Página tipo chat (INT-14) con "Nueva conversación", y botón "Resumir con el asistente" en el detalle de la incidencia.
 5. Agrega IA_PROVEEDOR=gemini, IA_MODELO= e IA_API_KEY= (vacía) a .env.example, y explica en el README cómo sacar la clave gratuita en Google AI Studio y en Groq.
 
-## [ ] Parte E — Cierre para el equipo
+## [x] Parte E — Cierre para el equipo
 1. README: cómo instalar y correr backend, web y movil, y los usuarios de prueba.
 2. docs/PENDIENTES.md con:
    - errores conocidos;

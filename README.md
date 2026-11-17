@@ -7,9 +7,17 @@ Proyecto del Laboratorio de Software, UTP. Todos los datos son ficticios.
 | `backend/` | API REST                         | Laravel 13 + Sanctum, PHP 8.5, PostgreSQL (Neon) |
 | `web/`     | Aplicación web (todos los roles) | Angular 21 + Bootstrap 5                         |
 | `movil/`   | Aplicación del repartidor        | Ionic 9 + Angular 22 + Capacitor                 |
-| `docs/`    | Modelo de datos                  | `modelo_relacional.dbml` (se puede pegar en https://dbdiagram.io) |
+| `docs/`    | Modelo de datos y mockups        | `modelo_relacional.dbml` (se puede pegar en https://dbdiagram.io) e `interfaces/` |
 
-Las reglas del proyecto y el patrón para agregar módulos están en [`CLAUDE.md`](CLAUDE.md). Léelo antes de programar.
+Antes de programar:
+
+- [`CLAUDE.md`](CLAUDE.md): reglas del proyecto y patrón para agregar módulos (detalle en [`docs/guia-detallada.md`](docs/guia-detallada.md)).
+- [`docs/PENDIENTES.md`](docs/PENDIENTES.md): errores conocidos, diferencias con los mockups, mejoras pendientes y
+  **qué módulo le toca probar y ajustar a cada integrante**.
+- [`docs/interfaces/README.md`](docs/interfaces/README.md): mockups de cada pantalla (INT-xx) y ajustes al modelo.
+
+Resumen para arrancar (tres terminales): `php artisan serve` en `backend/`, `npm start` en `web/` e `ionic serve`
+en `movil/`. La primera vez sigue los pasos de abajo.
 
 ## Requisitos
 
@@ -100,17 +108,31 @@ por la IP del computador que corre el backend.
 El backend debe estar corriendo para que la web y el móvil funcionen. La dirección de la API está en
 `src/environments/environment.ts` de cada proyecto (`http://localhost:8000/api`).
 
+## Antes de subir cambios
+
+```bash
+cd backend && php artisan test && vendor/bin/pint --dirty   # pruebas y formato
+cd web     && npx ng build                                  # compila la web
+cd movil   && ionic build && npm run eslint                 # compila el móvil y revisa el estilo
+```
+
+Los tres deben terminar sin errores. (La web muestra un aviso de tamaño del paquete inicial: está anotado en
+`docs/PENDIENTES.md` y no impide compilar.)
+
 ## Usuarios de prueba
 
 Todos con la contraseña `password`.
 
 | Rol           | Correo                      | Qué ve                                                    |
 | ------------- | --------------------------- | --------------------------------------------------------- |
-| Administrador | `admin@logistica.test`      | Todo (20 pedidos)                                         |
-| Operador      | `operador@logistica.test`   | Todo, menos Administración                                |
-| Comercio      | `comercio@logistica.test`   | Solo lo de "Tienda La Esquina" (10 pedidos)               |
-| Comercio      | `comercio2@logistica.test`  | Solo lo de "Farmacia Vida Sana" (10 pedidos)              |
-| Repartidor    | `repartidor@logistica.test` | Solo sus pedidos asignados (14). Es el usuario del móvil  |
+| Administrador | `admin@logistica.test`      | Todo: Panel, Usuarios, Parametrización, Pedidos, Clientes, Incidencias y Asistente IA |
+| Operador      | `operador@logistica.test`   | Todo menos Usuarios y Parametrización; además, Repartidores |
+| Comercio      | `comercio@logistica.test`   | Solo lo de "Tienda La Esquina" (pedidos, clientes e incidencias) |
+| Comercio      | `comercio2@logistica.test`  | Solo lo de "Farmacia Vida Sana"                           |
+| Repartidor    | `repartidor@logistica.test` | Solo sus pedidos asignados. Es el usuario del móvil       |
+| Repartidor    | `repartidor2@` a `repartidor5@logistica.test` | Repartidores de demostración, en zonas distintas (el 3 y el 5, no disponibles) |
+
+La web es para administrador, operador y comercio; la app móvil, solo para el repartidor.
 
 ## API disponible
 
@@ -136,6 +158,20 @@ Todos con la contraseña `password`.
 | POST   | `/api/asistente/consultas` | administrador, operador       |
 | GET    | `/api/panel/resumen` | administrador, operador, comercio |
 | GET    | `/api/panel/indicadores` | administrador, operador       |
+| GET    | `/api/pedidos/{id}/repartidores` | administrador, operador (candidatos para asignar) |
+| PUT    | `/api/pedidos/{id}/repartidor` | administrador, operador (asignar o reasignar) |
+| PUT    | `/api/pedidos/{id}/cancelacion` | administrador, operador  |
+| PUT    | `/api/pedidos/{id}/estado` | repartidor (recogido, en ruta, entregado, no entregado) |
+| POST   | `/api/pedidos/{id}/evidencias` | repartidor                |
+| GET    | `/api/repartidores`  | administrador, operador           |
+| PUT    | `/api/repartidores/{id}/disponibilidad` | administrador, operador, repartidor (la suya) |
+| GET    | `/api/zonas`, `/api/comercios`, `/api/tipos-incidencia` | todos (catálogos) |
+| POST, PUT | `/api/zonas`, `/api/tipos-incidencia` (+ `/{id}/estado`) | administrador |
+| GET, PUT | `/api/configuracion` | administrador                   |
+| GET, POST, PUT | `/api/usuarios` (+ `/{id}/estado`, `/{id}/password`) | administrador |
+
+La lista completa y exacta sale de `php artisan route:list --path=api --except-vendor`; los roles de cada ruta
+están en el `routes.php` de cada módulo (`backend/app/Modules/<Módulo>/routes.php`).
 
 Las listas aceptan `?page=2`. La de pedidos filtra con `?estado=`, `?numero=`, `?zona_id=`, `?comercio_id=`,
 `?desde=` y `?hasta=` (fecha de creación); la de clientes, con `?buscar=` (nombre, cédula o teléfono) y `?comercio_id=`.
