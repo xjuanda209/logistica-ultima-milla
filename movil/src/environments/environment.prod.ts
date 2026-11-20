@@ -1,5 +1,5 @@
-// Configuración para producción (ionic build). Cambiar apiUrl cuando exista un servidor desplegado.
+// Configuración para producción (build). URL pública de la API desplegada en Render (docs/DESPLIEGUE.md).
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:8000/api',
+  apiUrl: 'https://logistica-api.onrender.com/api',
 };
