@@ -19,7 +19,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:4200', 'http://localhost:8100'],
+    // Orígenes de la web y del móvil, separados por comas (en producción, las URL de Vercel).
+    'allowed_origins' => array_values(array_filter(array_map(
+        fn (string $origen): string => rtrim(trim($origen), '/'),
+        explode(',', (string) env('FRONTEND_URLS', 'http://localhost:4200,http://localhost:8100')),
+    ))),
 
     'allowed_origins_patterns' => [],
 

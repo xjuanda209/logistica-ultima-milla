@@ -18,12 +18,15 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    // Dominios (sin esquema) de FRONTEND_URLS, más los locales y el de la propia API.
+    'stateful' => array_values(array_unique(array_filter(array_merge(
+        ['localhost', 'localhost:3000', '127.0.0.1', '127.0.0.1:8000', '::1'],
+        array_map(
+            fn (string $origen): string => (string) preg_replace('#^https?://#', '', rtrim(trim($origen), '/')),
+            explode(',', (string) env('FRONTEND_URLS', 'http://localhost:4200,http://localhost:8100')),
+        ),
+        [ltrim(Sanctum::currentApplicationUrlWithPort(), ',')],
+    )))),
 
     /*
     |--------------------------------------------------------------------------

@@ -8,10 +8,14 @@ import {
   PreloadAllModules,
 } from '@angular/router';
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular';
+import { defineCustomElements } from '@ionic/pwa-elements/loader';
 
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { authInterceptor } from './app/core/auth.interceptor';
+
+// Interfaz web de la cámara de Capacitor: permite tomar fotos desde el navegador del celular.
+defineCustomElements(window);
 
 bootstrapApplication(AppComponent, {
   providers: [
