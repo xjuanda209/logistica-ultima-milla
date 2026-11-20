@@ -50,7 +50,7 @@ Modules/  Administracion (Usuario, Zona, Comercio, Configuracion) · Pedidos (Cl
 - **Validación**: Form Requests; mensajes en `lang/es/validation.php` (agrega ahí reglas y `attributes` nuevos).
 - **Relaciones**: `with()` solo con las columnas del Resource; una relación sin cargar lanza error (`preventLazyLoading`).
 - **Estados e historial**: todo cambio de estado pasa por `Pedido::cambiarEstado()` (transiciones solo en `EstadoPedido::siguientes()`), que inserta en `historial_pedido` (nunca se edita); quién puede recibir un pedido, solo en `Usuario::motivoParaNoRecibir()`. Canal: `Canal::deLaPeticion($request)` (`X-Canal: movil`; sin encabezado, `web`). En `edicion` el detalle es JSON (`HistorialPedido::cambios()`). Número de pedido: `Pedido::siguienteNumero()`.
-- **Incidencias y asistente**: flujo abierta → en_revision → resuelta solo en `EstadoIncidencia::siguiente()`; visibilidad con `Incidencia::scopeVisiblesPara()`. La IA se llama solo por la interfaz `ClienteIA` (`Asistente/IA`; proveedor según `IA_PROVEEDOR`); los datos que se le envían los arma y anonimiza `ContextoOperacion`. En pruebas: `ClienteIASimulado::instalar()`. **CORS**: solo `localhost:4200` y `localhost:8100`.
+- **Incidencias y asistente**: flujo abierta → en_revision → resuelta solo en `EstadoIncidencia::siguiente()`; visibilidad con `Incidencia::scopeVisiblesPara()`. La IA se llama solo por la interfaz `ClienteIA` (`Asistente/IA`; proveedor según `IA_PROVEEDOR`); los datos que se le envían los arma y anonimiza `ContextoOperacion`. En pruebas: `ClienteIASimulado::instalar()`. **CORS**: orígenes de `FRONTEND_URLS` (por defecto `localhost:4200` y `localhost:8100`).
 
 ## Cómo hacer un CRUD (referencia: Zonas, en Administración; Usuarios para casos menos comunes)
 
