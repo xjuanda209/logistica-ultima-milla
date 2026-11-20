@@ -1,0 +1,49 @@
+# Blueprint de Render: API Laravel en Docker (plan gratuito). Pasos en docs/DESPLIEGUE.md.
+# Las variables con "sync: false" se escriben a mano en el panel de Render (son secretas o dependen del despliegue).
+services:
+  - type: web
+    name: logistica-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: Logistica Ultima Milla
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: FRONTEND_URLS
+        sync: false
+      - key: SEMBRAR_DEMO
+        value: "false"
+      - key: IA_PROVEEDOR
+        value: gemini
+      - key: IA_MODELO
+        value: ""
+      - key: IA_API_KEY
+        sync: false
